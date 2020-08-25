@@ -1,0 +1,22 @@
+{application, amoveo_explorer,
+ [{description, "An OTP application"},
+  {vsn, "0.1.0"},
+  {registered, []},
+  {mod, { amoveo_explorer_app, []}},
+  {applications,
+   [kernel,
+    stdlib,
+    ssl,
+    cowboy,
+    inets,
+    encrypter,
+    jiffy,
+    pink_hash
+   ]},
+  {env,[]},
+  {modules, []},
+
+  {maintainers, []},
+  {licenses, ["Apache 2.0"]},
+  {links, []}
+ ]}.
