@@ -7,8 +7,10 @@
 %this module allows you to look up a version of the set of accounts, based on a given block hash.
 %This way we can easily revert for orphaned blocks.
 
--record(acc, {pub, balance, sub_accs}).
--record(node, {id = <<0:520>>, balance, sub_accs, left = error, right = error}).
+%TODO. once the data is more than 30 blocks old, keep a copy from 30 blocks ago, and delete the stuff from before then, because it is too much to keep track of. garbage collection.
+
+-record(acc, {pub, balance, sub_accs, type = veo, txs = []}).
+-record(node, {id = <<0:520>>, balance, sub_accs, type = veo, txs = [], left = error, right = error}).
 -record(db, {counter = 0, 
              blockhash2node = dict:new(), 
              nodes = dict:new()}).
@@ -60,8 +62,8 @@ read(Pub, BlockHash) ->
            sub_accs = SA
          } = Node,
     #acc{pub = ID,
-           balance = Balance,
-           sub_accs = SA}
+         balance = Balance,
+         sub_accs = SA}
     end.
 
 
@@ -86,7 +88,8 @@ add_acc(Counter, Acc, RootIDNumber, Dict) ->
     #acc{
          pub = <<H:520>>,
          balance = Balance,
-         sub_accs = SubAccs
+         sub_accs = SubAccs,
+         txs = Txs
         } = Acc,
     Node = dict:fetch(RootIDNumber, Dict),
     #node{
@@ -98,7 +101,8 @@ add_acc(Counter, Acc, RootIDNumber, Dict) ->
         H == ID ->
             Node2 = Node#node{
                       balance = Balance,
-                      sub_accs = SubAccs
+                      sub_accs = merge_lists(SubAccs, Node#node.sub_accs),
+                      txs = merge_lists(Txs, Node#node.txs)
                      },
             Dict3 = dict:store(Counter+1, Node2, Dict),
             {Dict3, Counter+1};
@@ -129,6 +133,20 @@ read_tree(<<ID:520>>, Root, Dict) ->
         ID < ID2 -> read_tree(<<ID:520>>, LNID, Dict);
         true -> read_tree(<<ID:520>>, RNID, Dict)
     end.
+is_in(X, []) -> false;
+is_in(X, [X|_]) -> true;
+is_in(X, [_|T]) -> 
+    is_in(X, T).
+merge_lists([], X) -> X;
+merge_lists(X, []) -> X;
+merge_lists([H|T], L) -> 
+    B = is_in(H, L),
+    A = if
+            B -> [];
+            true ->[H]
+        end,
+    merge_lists(T, A++L).
+            
 
 
 test() ->
