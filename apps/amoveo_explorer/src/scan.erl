@@ -3,7 +3,8 @@
 
 doit() ->
     {ok, Height} = utils:talk({height}),
-    scan_history(0, Height+1).
+    scan_history(0, Height+1),
+    scan_sub_accounts().
 scan_history(N, M) when N >= M -> ok;
 scan_history(Start, End) -> 
     io:fwrite("scanning blocks at \n"),
@@ -25,9 +26,9 @@ scan_history(Start, End) ->
 load_txs([]) -> ok;
 load_txs([Block|[NB|T]]) -> 
     Height = element(2, Block),
-    io:fwrite("scanning txs at \n"),
-    io:fwrite(integer_to_list(Height)),
-    io:fwrite("\n"),
+    %io:fwrite("scanning txs at \n"),
+    %io:fwrite(integer_to_list(Height)),
+    %io:fwrite("\n"),
     Hash = element(3, NB),
     %{ok, Hash} = utils:talk({block_hash, Height}),
     Txs = element(11, Block),
@@ -35,9 +36,9 @@ load_txs([Block|[NB|T]]) ->
     load_txs([NB|T]);
 load_txs([Block]) -> 
     Height = element(2, Block),
-    io:fwrite("scanning txs at \n"),
-    io:fwrite(integer_to_list(Height)),
-    io:fwrite("\n"),
+    %io:fwrite("scanning txs at \n"),
+    %io:fwrite(integer_to_list(Height)),
+    %io:fwrite("\n"),
     {ok, Hash} = utils:talk({block_hash, Height}),
     Txs = element(11, Block),
     load_txs2(Txs, Hash),
@@ -46,9 +47,9 @@ load_txs([]) -> ok.
 load_txs2([], _) -> ok;
 load_txs2([Tx|T], Hash) -> 
     Txid = txs:add(Tx, Hash),
-    io:fwrite("processing a tx \n"),
-    io:fwrite(packer:pack(Tx)),
-    io:fwrite("\n"),
+    %io:fwrite("processing a tx \n"),
+    %io:fwrite(packer:pack(Tx)),
+    %io:fwrite("\n"),
     account_process(Tx, Txid),
     load_txs2(T, Hash).
 account_process({coinbase, Pub, _, _}, Txid) ->
@@ -87,6 +88,26 @@ ap2(Tx, ID) ->
                       accounts:add_tx(element(N, Tx),
                                       ID)
               end, Ls).
+scan_sub_accounts() ->
+    {ok, SAs} = utils:talk({accounts, 2}),
+    %{sub_acc, balance, nonce, pubkey, cid, type}
+    lists:map(fun(SA) ->
+                      Pub = element(4, SA),
+                      CID = element(5, SA),
+                      Type = element(6, SA),
+                      case Type of
+                          0 -> accounts:add_shares(Pub, CID);
+                          _ -> accounts:add_sub(Pub, CID)
+                      end
+              end, SAs),
+    ok.
+                              
+
+
+
+
+
+
 
 
 
