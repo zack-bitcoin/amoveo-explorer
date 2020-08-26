@@ -3,11 +3,13 @@
 
 doit() ->
     {ok, Height} = utils:talk({height}),
-    scan_history(0, Height).
+    scan_history(0, Height+1).
 scan_history(N, M) when N >= M -> ok;
 scan_history(Start, End) -> 
-    io:fwrite("scanning at \n"),
+    io:fwrite("scanning blocks at \n"),
     io:fwrite(integer_to_list(Start)),
+    io:fwrite(" - "),
+    io:fwrite(integer_to_list(End)),
     io:fwrite("\n"),
     {ok, Blocks} = utils:talk({blocks, Start, End}),
     case length(Blocks) of
@@ -23,13 +25,19 @@ scan_history(Start, End) ->
 load_txs([]) -> ok;
 load_txs([Block|[NB|T]]) -> 
     Height = element(2, Block),
+    io:fwrite("scanning txs at \n"),
+    io:fwrite(integer_to_list(Height)),
+    io:fwrite("\n"),
     Hash = element(3, NB),
     %{ok, Hash} = utils:talk({block_hash, Height}),
     Txs = element(11, Block),
     load_txs2(Txs, Hash),
-    load_txs(T);
+    load_txs([NB|T]);
 load_txs([Block]) -> 
     Height = element(2, Block),
+    io:fwrite("scanning txs at \n"),
+    io:fwrite(integer_to_list(Height)),
+    io:fwrite("\n"),
     {ok, Hash} = utils:talk({block_hash, Height}),
     Txs = element(11, Block),
     load_txs2(Txs, Hash),
@@ -38,6 +46,9 @@ load_txs([]) -> ok.
 load_txs2([], _) -> ok;
 load_txs2([Tx|T], Hash) -> 
     Txid = txs:add(Tx, Hash),
+    io:fwrite("processing a tx \n"),
+    io:fwrite(packer:pack(Tx)),
+    io:fwrite("\n"),
     account_process(Tx, Txid),
     load_txs2(T, Hash).
 account_process({coinbase, Pub, _, _}, Txid) ->
@@ -105,9 +116,12 @@ unused(Tx, ID) ->
             Acc = element(2, Tx),
             CID1 = element(5, Tx),
             CID2 = element(6, Tx),
-            0;
-            %MID = make_market_id(CID1, Type1, CID2, Type2),
-            %accounts:add_shares(Acc, MID);
+            Type1 = element(7, Tx),
+            Type2 = element(8, Tx),
+            MID = make_market_id(CID1, Type1, CID2, Type2),
+            accounts:add_shares(Acc, MID),
+            accounts:add_sub(Acc, CID1),
+            accounts:add_sub(Acc, CID2);
         market_liquidity_tx ->
             Acc = element(2, Tx),
             MID = element(5, Tx),

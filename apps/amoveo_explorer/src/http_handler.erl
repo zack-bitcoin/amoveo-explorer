@@ -17,6 +17,10 @@ handle(Req, State) ->
     {ok, Req4} = cowboy_req:reply(200, Headers, D, Req3),
     {ok, Req4, State}.
 doit({test}) -> {ok, "success"};
+doit({account, Pub}) ->
+    {ok, accounts:read(Pub)};
+doit({tx, ID}) ->
+    {ok, txs:read(ID)};
 
 doit(X) ->
     io:fwrite("http handler doit fail"),
