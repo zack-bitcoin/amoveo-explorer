@@ -9,7 +9,8 @@ cron(N) ->
                       {ok, Height} ->
                           if
                               Height > N -> 
-                                  spawn(fun() -> doit() end),
+                                  %spawn(fun() -> doit() end),
+                                  doit(),
                                   cron(Height);
                               true -> cron(N)
                           end;
