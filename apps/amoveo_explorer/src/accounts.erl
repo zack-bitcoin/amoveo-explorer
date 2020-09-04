@@ -46,8 +46,8 @@ read(Pub) ->
     gen_server:call(?MODULE, {read, Pub}).
 add_tx(0, _) -> ok;
 add_tx(Pub, TxID) ->
-    ok.
-    %gen_server:cast(?MODULE, {add, Pub, [TxID], [], []}).
+    %ok.
+    gen_server:cast(?MODULE, {add, Pub, [TxID], [], []}).
 add_sub(0, _) -> ok;
 add_sub(Pub, <<0:256>>) -> ok;
 add_sub(Pub, ID) ->

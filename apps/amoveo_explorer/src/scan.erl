@@ -10,7 +10,8 @@ cron(N) ->
                           if
                               Height > N -> 
                                   %spawn(fun() -> doit() end),
-                                  doit(),
+                                  %doit(),
+                                  scan_history(Height-5, Height),
                                   cron(Height);
                               true -> cron(N)
                           end;
@@ -24,9 +25,11 @@ doit() ->
     {ok, Height} = utils:talk({height}),
     Start = case utils:test_mode() of
                 true -> 0;
-                false -> 130000
+                false -> 0%130000
             end,
-    scan_history(Start, Height+1).
+    spawn(fun() ->
+              scan_history(Start, Height+1)
+          end).
     %scan_sub_accounts(),
     %scan_markets().
 scan_history(N, M) when N >= M -> ok;
