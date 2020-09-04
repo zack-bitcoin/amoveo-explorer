@@ -38,10 +38,10 @@ scan_history(Start, End) ->
             io:fwrite("done scanning tx history\n"),
             ok;
         _ ->
-            load_txs(Blocks),
-            LastBlock = lists:nth(length(Blocks), Blocks),
-            LastHeight = element(2, LastBlock),
-            scan_history(LastHeight + 1, End)
+            load_txs(Blocks)%,
+                %LastBlock = lists:nth(length(Blocks), Blocks),
+                %LastHeight = element(2, LastBlock),
+                %scan_history(LastHeight + 1, End)
     end.
 load_txs([]) -> ok;
 load_txs([Block|[NB|T]]) -> 
