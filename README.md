@@ -17,6 +17,9 @@ First make sure you have an Amoveo node running, and that the keys are unlocked 
 sh start.sh
 ```
 
+
+
+
 To connect to it, so you can give it commands:
 ```
 sh attach.sh

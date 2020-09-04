@@ -4,7 +4,7 @@
 start(_StartType, _StartArgs) ->
     inets:start(),
     start_http(),
-    %scan:cron(0),
+    scan:cron(130000),
     amoveo_explorer_sup:start_link().
 stop(_State) ->
     ok.
