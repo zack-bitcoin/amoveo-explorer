@@ -17,10 +17,9 @@ include/
 *.pyc
 nosetests.xml
 pip-selfcheck.json
-config/*/sys.config
 man
 compile_commands.json
 deps/*
 rebar.lock
 .DS_Store
-sys.config.tmpl
+config/sys.config
