@@ -9,8 +9,6 @@ cron(N) ->
                       {ok, Height} ->
                           if
                               Height > N -> 
-                                  %spawn(fun() -> doit() end),
-                                  %doit(),
                                   scan_history(Height-5, Height),
                                   cron(Height);
                               true -> cron(N)

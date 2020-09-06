@@ -4,7 +4,7 @@
         read/1, add/8, large_ones/0, test/0,
         cid1/1, cid2/1]).
 
--record(market, {mid, height, volume = 0, txs = [], cid1, type1, cid2, type2}).
+-record(market, {mid, height, volume = 0, txs = [], cid1, type1, cid2, type2, amount1, amount2}).
 
 cid1(M) ->
     M#market.cid1.
@@ -30,12 +30,13 @@ handle_cast({add, MID, Volume, Txs, Height, CID1, Type1, CID2, Type2}, X) ->
                       cid1 = CID1, type1 = Type1, 
                       cid2 = CID2, type2 = Type2}
                 end,
-            OldHeight = M#market.height,
-            DH = max(0, Height - OldHeight),
-            V1 = round(M#market.volume * 
-                           math:pow(129 / 130, DH)),
+            V1 = current_volume(M, Height),
+            %OldHeight = M#market.height,
+            %DH = max(0, Height - OldHeight),
+            %V1 = round(M#market.volume * 
+            %               math:pow(129 / 130, DH)),
             M2 = M#market{
-                   height = OldHeight + DH, 
+                   height = Height, 
                    volume = V1 + Volume,
                    txs = merge(Txs, M#market.txs)
                   },
@@ -43,7 +44,45 @@ handle_cast({add, MID, Volume, Txs, Height, CID1, Type1, CID2, Type2}, X) ->
             {noreply, X2}
     end;
 handle_cast(_, X) -> {noreply, X}.
-handle_call(large, _From, X) -> 
+%handle_call({large, Height}, _From, X) -> 
+%    Keys = dict:fetch_keys(X),
+%    Markets = 
+%        lists:map(
+%          fun(Key) ->
+%                  dict:fetch(Key, X)
+%          end, Keys),
+%    Markets2 = 
+%        lists:sort(
+%          fun(A, B) -> 
+                  % TODO: volume should decrease depending on how long it has been since it was updated.
+%                  VA = current_volume(A, Height),
+%                  VB = current_volume(B, Height),
+%                  VA < VB
+%          end, Markets),
+%    Markets3 = 
+%        lists:map(
+%          fun(Market) ->
+%                  Market#market.mid
+%          end, Markets2),
+%    {reply, Markets3, X};
+handle_call({read, MID}, _From, X) -> 
+    {reply, dict:find(MID, X), X};
+handle_call(_, _From, X) -> {reply, X, X}.
+
+current_volume(M, Height) ->
+    OldHeight = M#market.height,
+    DH = max(0, Height - OldHeight),
+    V1 = round(M#market.volume * 
+                   math:pow(129 / 130, DH)),
+    V1.
+
+    
+
+read(MID) ->
+    gen_server:call(?MODULE, {read, MID}).
+large_ones() ->
+    {ok, Height} = utils:talk({height}),
+    X = gen_server:call(?MODULE, dict),
     Keys = dict:fetch_keys(X),
     Markets = 
         lists:map(
@@ -54,23 +93,29 @@ handle_call(large, _From, X) ->
         lists:sort(
           fun(A, B) -> 
                   % TODO: volume should decrease depending on how long it has been since it was updated.
-                  A#market.volume <
-                      B#market.volume
+                  VA = current_volume(A, Height),
+                  VB = current_volume(B, Height),
+                  VA < VB
           end, Markets),
-    Markets3 = 
-        lists:map(
-          fun(Market) ->
-                  Market#market.mid
-          end, Markets2),
-    {reply, Markets3, X};
-handle_call({read, MID}, _From, X) -> 
-    {reply, dict:find(MID, X), X};
-handle_call(_, _From, X) -> {reply, X, X}.
+%    Markets3 = 
+%        lists:map(
+%          fun(Market) ->
+%                  Market#market.mid
+%          end, Markets2),
+    {Markets4, _} = 
+        lists:split(min(10, length(Markets2)),
+                    Markets2),
+    Markets4.
+%    Markets4 = 
+%        lists:map(
+%          fun(MID) ->
+%                  {ok, M} = utils:talk({markets, MID}),
+%                  M
+%          end, Markets3),
+                          
+                                                     
 
-read(MID) ->
-    gen_server:call(?MODULE, {read, MID}).
-large_ones() ->
-    gen_server:call(?MODULE, large).
+
 add(MID, Volume, Txs, Height, CID1, Type1, CID2, Type2) ->
     gen_server:cast(?MODULE, {add, MID, Volume, Txs, Height, CID1, Type1, CID2, Type2}).
 

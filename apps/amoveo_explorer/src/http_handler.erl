@@ -25,8 +25,10 @@ doit({market, MID}) ->
     {ok, markets:read(MID)};
 doit({r, CID1, CID2}) ->
     {ok, paths:doit(CID1, CID2)};
-doit({market_order}) ->
+doit({markets}) ->
     {ok, markets:large_ones()};
+doit({contracts}) ->
+    {ok, contracts:large_ones()};
 
 doit(X) ->
     io:fwrite("http handler doit fail"),

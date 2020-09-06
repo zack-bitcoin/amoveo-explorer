@@ -2,6 +2,7 @@
 -behaviour(gen_server).
 -export([start_link/0,code_change/3,handle_call/3,handle_cast/2,handle_info/2,init/1,terminate/2,
         read/1, add/5, test/0,
+         large_ones/0,
         source/1, types/1]).
 
 -record(contract, {cid, source = <<0:256>>, types, markets = [], txs = []}).
@@ -46,6 +47,39 @@ handle_cast(_, X) -> {noreply, X}.
 handle_call({read, CID}, _From, X) -> 
     {reply, dict:find(CID, X), X};
 handle_call(_, _From, X) -> {reply, X, X}.
+
+large_ones() ->
+    {ok, Height} = utils:talk({height}),
+    %gen_server:call(?MODULE, {large, Height}).
+    X = gen_server:call(?MODULE, dict),
+    Keys = dict:fetch_keys(X),
+    Contracts = 
+        lists:map(
+          fun(Key) ->
+                  dict:fetch(Key, X)
+          end, Keys),
+    CIDS =
+        lists:map(
+          fun(Contract) ->
+                  Contract#contract.cid
+          end, Contracts),
+    Contracts2 = 
+        lists:map(
+          fun(CID) ->
+                  {ok, C} = talker:talk({contracts, CID},
+                                        utils:server_url(external)),
+                  C
+          end, CIDS),
+    Contracts3 =
+        lists:sort(
+          fun(C1, C2) ->
+                  (element(11, C1)) <
+                      (element(11, C2))
+          end, Contracts2),
+    {Contracts4, _} = 
+        lists:split(min(10, length(Contracts3)),
+                    Contracts3),
+    Contracts4.
 
 merge([], X) -> X;
 merge([H|T], L) -> 
