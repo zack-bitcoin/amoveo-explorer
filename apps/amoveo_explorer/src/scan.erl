@@ -9,7 +9,9 @@ cron(N) ->
                       {ok, Height} ->
                           if
                               Height > N -> 
-                                  scan_history(Height-5, Height),
+                                  spawn(fun() ->
+                                                scan_history(Height-5, Height)
+                                        end),
                                   cron(Height);
                               true -> cron(N)
                           end;
