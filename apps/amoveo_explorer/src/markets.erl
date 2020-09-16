@@ -93,8 +93,8 @@ large_ones() ->
         lists:sort(
           fun(A, B) -> 
                   % TODO: volume should decrease depending on how long it has been since it was updated.
-                  VA = current_volume(A, Height) + A#market.amount1 + A#market.amount2,
-                  VB = current_volume(B, Height) + B#market.amount1 + B#market.amount2,
+                  VA = current_volume(A, Height),
+                  VB = current_volume(B, Height),
                   VA > VB
           end, Markets),
 %    Markets3 = 
