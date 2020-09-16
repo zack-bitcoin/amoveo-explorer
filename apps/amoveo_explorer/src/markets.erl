@@ -95,7 +95,7 @@ large_ones() ->
                   % TODO: volume should decrease depending on how long it has been since it was updated.
                   VA = current_volume(A, Height),
                   VB = current_volume(B, Height),
-                  VA < VB
+                  VA > VB
           end, Markets),
 %    Markets3 = 
 %        lists:map(

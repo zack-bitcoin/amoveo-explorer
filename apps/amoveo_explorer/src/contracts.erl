@@ -73,7 +73,7 @@ large_ones() ->
     Contracts3 =
         lists:sort(
           fun(C1, C2) ->
-                  (element(11, C1)) <
+                  (element(11, C1)) >
                       (element(11, C2))
           end, Contracts2),
     {Contracts4, _} = 
