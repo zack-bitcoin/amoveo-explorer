@@ -20,7 +20,7 @@ handle_cast({add, Pub, Txids, Subs, Shares}, X) ->
     #acc{txs = Txs,
          sub_accs = SAs,
          liquidity_shares = LSs} = Acc,
-    Acc2 = Acc#acc{txs = merge(Txids, Txs),
+    Acc2 = Acc#acc{txs = [],%merge(Txids, Txs),
                    sub_accs = merge(SAs, Subs),
                    liquidity_shares = merge(LSs, Shares)},
     X2 = dict:store(Pub, Acc2, X),
