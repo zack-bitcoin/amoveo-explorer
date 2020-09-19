@@ -76,10 +76,24 @@ is_in(H, [_|T]) ->
 
 to_source(<<0:256>>) -> [{<<0:256>>, 1}];
 to_source(CID) -> 
-    {ok, C} = contracts:read(CID),
-    S = contracts:source(C),
-    T = contracts:types(C),
-    [{CID, T}|to_source(S)].
+    case contracts:read(CID) of
+        {ok, C} ->
+            %{ok, C} = contracts:read(CID),
+            S = contracts:source(C),
+            T = contracts:types(C),
+            [{CID, T}|to_source(S)];
+        error ->
+            case markets:read(CID) of
+                {ok, M} -> 
+                    CID1 = markets:cid1(M),
+                    CID2 = markets:cid2(M),
+                    to_source(CID1)++
+                        to_source(CID2);
+                error ->
+                    io:fwrite("unhandled paths error \n"),
+                    1=2
+            end
+    end.
     
 
 
