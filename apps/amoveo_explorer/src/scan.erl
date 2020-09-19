@@ -25,7 +25,7 @@ doit() ->
     {ok, Height} = utils:talk({height}),
     Start = case utils:test_mode() of
                 true -> 0;
-                false -> 131000
+                false -> 130000
             end,
 %    spawn(fun() ->
               scan_history(Start, Height+1).
