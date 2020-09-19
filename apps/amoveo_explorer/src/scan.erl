@@ -39,7 +39,8 @@ scan_history(Start, End) ->
     io:fwrite(" - "),
     io:fwrite(integer_to_list(End)),
     io:fwrite("\n"),
-    {ok, Blocks} = utils:talk({blocks, Start, End}),
+    E2 = min(End, Start+50),
+    {ok, Blocks} = utils:talk({blocks, Start, E2}),
     case length(Blocks) of
         1 -> 
             io:fwrite("done scanning tx history\n"),
