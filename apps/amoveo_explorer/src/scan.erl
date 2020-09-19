@@ -25,11 +25,11 @@ doit() ->
     {ok, Height} = utils:talk({height}),
     Start = case utils:test_mode() of
                 true -> 0;
-                false -> 130000
+                false -> 131000
             end,
-    spawn(fun() ->
-              scan_history(Start, Height+1)
-          end).
+%    spawn(fun() ->
+              scan_history(Start, Height+1).
+%          end).
     %scan_sub_accounts(),
     %scan_markets().
 scan_history(N, M) when N >= M -> ok;

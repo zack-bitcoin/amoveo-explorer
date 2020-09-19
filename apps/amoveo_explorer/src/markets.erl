@@ -38,7 +38,7 @@ handle_cast({add, MID, Volume, Txs, Height, CID1, Type1, CID2, Type2}, X) ->
             M2 = M#market{
                    height = Height, 
                    volume = V1 + Volume,
-                   txs = []%merge(Txs, M#market.txs)
+                   txs = merge(Txs, M#market.txs)
                   },
             X2 = dict:store(MID, M2, X),
             {noreply, X2}
