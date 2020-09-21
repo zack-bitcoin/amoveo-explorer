@@ -143,12 +143,12 @@ markets2(Tx, Height, Txid) ->
                         Give;
                     2 -> 0
                 end,
-            markets:add(MID, V, [Tx], Height, 0,0,0,0);
+            markets:add(MID, V, [Txid], Height, 0,0,0,0);
         market_liquidity_tx ->
 %-record(market_liquidity_tx, {from, nonce, fee, mid, amount, cid1, type1, cid2, type2}).
             MID = element(5, Tx),
             To = element(2, Tx),
-            markets:add(MID, 0, [Tx], Height, 0,0,0,0);
+            markets:add(MID, 0, [Txid], Height, 0,0,0,0);
         _ -> ok
     end.
 accounts_subs({signed, Tx, _, _}) ->
