@@ -40,9 +40,9 @@ handle_cast({add, CID, Source, Types, Markets, Txs}, X) ->
                            C#contract.txs,
                            Txs)
                   },
-                X2 = dict:store(CID, C2, X),
+            X2 = dict:store(CID, C2, X),
             {noreply, X2}
-                   end;
+    end;
 handle_cast(_, X) -> {noreply, X}.
 handle_call({read, CID}, _From, X) -> 
     {reply, dict:find(CID, X), X};
@@ -73,8 +73,8 @@ large_ones() ->
     Contracts3 =
         lists:sort(
           fun(C1, C2) ->
-                  (element(11, C1)) >
-                      (element(11, C2))
+                  (element(12, C1)) >
+                      (element(12, C2))
           end, Contracts2),
     {Contracts4, _} = 
         lists:split(min(10, length(Contracts3)),
