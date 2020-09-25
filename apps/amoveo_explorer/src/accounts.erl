@@ -56,7 +56,9 @@ clean_account(Acc, Dict) ->
 clean_sub_dust([], _) -> [];
 clean_sub_dust([H|T], Pub) -> 
     {ok, Contract} = utils:talk({contract, H}),
+    io:fwrite("clean sub dust\n"),
     io:fwrite(packer:pack([H, Contract])),
+    io:fwrite("\n"),
     MT = element(3, Contract),
     B = csb_check(MT, H, Pub),
     X = if
