@@ -37,6 +37,14 @@ clean() ->
     X = gen_server:call(?MODULE, all),
     X2 = clean_accounts(dict:fetch_keys(X), X),
     gen_server:cast(?MODULE, {replace, X2}).
+
+clean_cron() ->
+    timer:sleep(120000),
+    spawn(clean),
+    clean_cron().
+
+
+
 clean_accounts([], X) -> X;
 clean_accounts([H|T], X) -> 
     A = dict:fetch(H, X),
@@ -83,8 +91,8 @@ clean_liquidity_dust([H|T], Pub) ->
     {ok, SA} = utils:talk({sub_account, Pub, H, 0}),
     B = element(2, SA) > 0.00000001,
     if
-        B -> clean_liquidity_dust(T, Pub);
-        true -> [H|clean_liquidity_dust(T, Pub)]
+        B -> [H|clean_liquidity_dust(T, Pub)];
+        true -> clean_liquidity_dust(T, Pub)
     end.
              
 
