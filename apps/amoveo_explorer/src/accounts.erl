@@ -2,6 +2,7 @@
 -behaviour(gen_server).
 -export([start_link/0,code_change/3,handle_call/3,handle_cast/2,handle_info/2,init/1,terminate/2,
          read/1, add_tx/2, add_sub/2, add_shares/2,
+         clean/0,
          add/4,
          test/0]).
 
@@ -25,11 +26,62 @@ handle_cast({add, Pub, Txids, Subs, Shares}, X) ->
                    liquidity_shares = merge(LSs, Shares)},
     X2 = dict:store(Pub, Acc2, X),
     {noreply, X2};
+handle_cast({replace, X}, _) -> 
+    {noreply, X};
 handle_cast(_, X) -> {noreply, X}.
 handle_call({read, Pub}, _From, X) -> 
     {reply, dict:find(Pub, X), X};
 handle_call(_, _From, X) -> {reply, X, X}.
 
+clean() ->
+    X = gen_server:call(?MODULE, all),
+    X2 = clean_accounts(dict:fetch_keys(X), X),
+    gen_server:cast(?MODULE, {replace, X2}).
+clean_accounts([], X) -> X;
+clean_accounts([H|T], X) -> 
+    A = dict:fetch(H, X),
+    V2 = clean_account(A, X),
+    X2 = dict:store(H, V2, X),
+    clean_accounts(T, X2).
+clean_account(Acc, Dict) ->
+    #acc{
+          pub = Pub,
+          sub_accs = SA,
+          liquidity_shares = LS
+        } = Acc,
+    Acc#acc{
+      sub_accs = clean_sub_dust(SA, Pub),
+      liquidity_shares = clean_liquidity_dust(LS, Pub)
+     }.
+clean_sub_dust([], _) -> [];
+clean_sub_dust([H|T], Pub) -> 
+    {ok, Contract} = utils:talk({contract, H}),
+    MT = element(3, Contract),
+    B = csb_check(MT, H, Pub),
+    X = if
+            B  -> [];
+            true -> [H]
+        end,
+    X ++ clean_sub_dust(T, Pub).
+csb_check(0, _, _) -> true;
+csb_check(T, CID, Pub) ->
+    {ok, SA} = utils:talk({sub_account, Pub, CID, T}),
+    B = element(2, SA) > 0.00000001,
+    if
+        B -> false;
+        true -> csb_check(T-1, CID, Pub)
+    end.
+clean_liquidity_dust([], _) -> [];
+clean_liquidity_dust([H|T], Pub) -> 
+    {ok, SA} = utils:talk({sub_account, Pub, H, 0}),
+    B = element(2, SA) > 0.00000001,
+    if
+        B -> clean_liquidity_dust(T, Pub);
+        true -> [H|clean_liquidity_dust(T, Pub)]
+    end.
+             
+
+    
 merge([], X) -> X;
 merge([H|T], L) -> 
     B = is_in(H, L),
