@@ -13,6 +13,9 @@ start(_StartType, _StartArgs) ->
                   scan:doit(),
                   scan:cron(N)
           end),
+    spawn(fun() ->
+                  accounts:clean_cron()
+          end),
     amoveo_explorer_sup:start_link().
 stop(_State) ->
     ok.
