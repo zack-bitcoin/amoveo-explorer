@@ -11,7 +11,7 @@ cron(N) ->
                               Height > N -> 
                                   spawn(fun() ->
                                                 timer:sleep(5000),
-                                                scan_history(Height-5, Height)
+                                                scan_history(Height-5, Height+1)
                                         end),
                                   cron(Height);
                               true -> cron(N)
