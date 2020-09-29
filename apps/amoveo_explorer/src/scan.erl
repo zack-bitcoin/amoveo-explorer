@@ -41,8 +41,8 @@ scan_history(Start, End) ->
     io:fwrite(integer_to_list(End)),
     io:fwrite("\n"),
     E2 = min(End, Start+50),
-    %{ok, Blocks} = utils:talk({blocks, Start, E2}),
-    {ok, Blocks} = utils:talk({blocks, 50, Start}),
+    {ok, Blocks} = utils:talk({blocks, Start, E2}),
+    %{ok, Blocks} = utils:talk({blocks, 50, Start}),
     case length(Blocks) of
         1 -> 
             io:fwrite("done scanning tx history\n"),
@@ -130,8 +130,8 @@ markets2(Tx, Height, Txid) ->
             CID2 = element(6, Tx),
             Type1 = element(7, Tx),
             Type2 = element(8, Tx),
-            Amount1 = element(9, Tx),
-            Amount2 = element(10, Tx),
+            %Amount1 = element(9, Tx),
+            %Amount2 = element(10, Tx),
             MID = make_market_id(CID1, Type1, CID2, Type2),
             contracts:add(CID1, 0, 0, [MID], [Txid]),
             markets:add(MID, 0, [Txid], Height, CID1, Type1, CID2, Type2);
@@ -149,7 +149,7 @@ markets2(Tx, Height, Txid) ->
         market_liquidity_tx ->
 %-record(market_liquidity_tx, {from, nonce, fee, mid, amount, cid1, type1, cid2, type2}).
             MID = element(5, Tx),
-            To = element(2, Tx),
+            %To = element(2, Tx),
             markets:add(MID, 0, [Txid], Height, 0,0,0,0);
         _ -> ok
     end.
