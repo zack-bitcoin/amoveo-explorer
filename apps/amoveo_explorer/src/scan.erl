@@ -10,6 +10,7 @@ cron(N) ->
                           if
                               Height > N -> 
                                   spawn(fun() ->
+                                                timer:sleep(5000),
                                                 scan_history(Height-5, Height)
                                         end),
                                   cron(Height);
@@ -40,7 +41,8 @@ scan_history(Start, End) ->
     io:fwrite(integer_to_list(End)),
     io:fwrite("\n"),
     E2 = min(End, Start+50),
-    {ok, Blocks} = utils:talk({blocks, Start, E2}),
+    %{ok, Blocks} = utils:talk({blocks, Start, E2}),
+    {ok, Blocks} = utils:talk({blocks, 50, Start}),
     case length(Blocks) of
         1 -> 
             io:fwrite("done scanning tx history\n"),
