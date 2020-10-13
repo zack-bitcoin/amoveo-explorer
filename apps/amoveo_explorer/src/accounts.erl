@@ -81,7 +81,7 @@ clean_sub_dust([H|T], Pub) ->
 csb_check(0, _, _) -> true;
 csb_check(T, CID, Pub) ->
     {ok, SA} = utils:talk({sub_account, Pub, CID, T}),
-    B = element(2, SA) > 0.00000001,
+    B = element(2, SA) > 0.0001,
     if
         B -> false;
         true -> csb_check(T-1, CID, Pub)
@@ -89,7 +89,7 @@ csb_check(T, CID, Pub) ->
 clean_liquidity_dust([], _) -> [];
 clean_liquidity_dust([H|T], Pub) -> 
     {ok, SA} = utils:talk({sub_account, Pub, H, 0}),
-    B = element(2, SA) > 0.00000001,
+    B = element(2, SA) > 0.0001,
     if
         B -> [H|clean_liquidity_dust(T, Pub)];
         true -> clean_liquidity_dust(T, Pub)
