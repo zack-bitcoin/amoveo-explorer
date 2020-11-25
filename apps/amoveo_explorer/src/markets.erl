@@ -2,9 +2,25 @@
 -behaviour(gen_server).
 -export([start_link/0,code_change/3,handle_call/3,handle_cast/2,handle_info/2,init/1,terminate/2,
         read/1, add/8, large_ones/0, test/0,
+         make_id/4,
         cid1/1, cid2/1]).
 
 -record(market, {mid, height, volume = 0, txs = [], cid1, type1, cid2, type2, amount1, amount2}).
+
+make_id(CID1, Type1, CID2, Type2) ->
+    %this is a copy of markets:make_id from amoveo.
+    <<N1:256>> = CID1,
+    <<N2:256>> = CID2,
+    if
+        ((N1+Type1) =< (N2+Type2)) ->
+            X = <<CID1/binary,
+                  CID2/binary,
+                  Type1:16,
+                  Type2:16>>,
+            hash:doit(X);
+        true ->
+            make_id(CID2, Type2, CID1, Type1)
+    end.
 
 cid1(M) ->
     M#market.cid1.

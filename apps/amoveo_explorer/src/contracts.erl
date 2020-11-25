@@ -68,18 +68,49 @@ large_ones() ->
           fun(CID) ->
                   {ok, C} = talker:talk({contracts, CID},
                                         utils:server_url(external)),
-                  C
+                  {CID, C}
           end, CIDS),
+    Ls = lists:map(
+           fun({CID, C}) ->
+                   Source = element(9, C),
+                   MID1 = markets:make_id(Source, 0, CID, 1),
+                   MID2 = markets:make_id(Source, 0, CID, 2),
+                   MID3 = markets:make_id(CID, 1, CID, 2),
+                   [K1, K2, K3] = 
+                       lists:map(fun(MID) ->
+                                         {ok, M} = 
+                                             talker:talk({markets, MID},
+                                                         utils:server_url(external)),
+                                         if
+                                             M == 0 -> 0;
+                                             true ->
+                                                 math:sqrt(element(5, M) * element(8, M))
+                                         end
+                                 end,
+                                 [MID1, MID2, MID3]),
+                   Liquidity = K1 + K2 + K3,
+                   {Liquidity, C}
+           end, Contracts2),
+    
     Contracts3 =
         lists:sort(
-          fun(C1, C2) ->
-                  (element(12, C1)) >
-                      (element(12, C2))
-          end, Contracts2),
-    {Contracts4, _} = 
-        lists:split(min(10, length(Contracts3)),
-                    Contracts3),
-    Contracts4.
+          fun({L1, C1}, {L2, C2}) ->
+                  L1 > L2
+          end, Ls),
+    Contracts4 = lists:map(
+                  fun({_, C}) ->
+                          C
+                  end, Contracts3),
+    %Contracts3 =
+    %    lists:sort(
+    %      fun(C1, C2) ->
+    %              (element(12, C1)) >
+    %                  (element(12, C2))
+    %      end, Contracts2),
+    {Contracts5, _} = 
+        lists:split(min(10, length(Contracts4)),
+                    Contracts4),
+    Contracts5.
 
 merge([], X) -> X;
 merge([H|T], L) -> 
