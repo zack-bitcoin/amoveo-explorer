@@ -27,6 +27,8 @@ doit({r, CID1, CID2}) ->
     {ok, paths:doit(CID1, CID2)};
 doit({markets}) ->
     {ok, markets:large_ones()};
+doit({contract, CID}) ->
+    {ok, contracts:read(CID)};
 doit({contracts}) ->
     {ok, contracts:large_ones()};
 
