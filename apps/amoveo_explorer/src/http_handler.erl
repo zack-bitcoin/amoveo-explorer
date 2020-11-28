@@ -11,7 +11,8 @@ handle(Req, State) ->
     %io:fwrite("\n"),
     Data1 = jiffy:decode(Data0),
     Data = packer:unpack_helper(Data1),
-    D = packer:pack(doit(Data)),
+    Result = doit(Data),
+    D = packer:pack(Result),
     Headers=[{<<"content-type">>,<<"application/octet-stream">>},
 	     {<<"Access-Control-Allow-Origin">>, <<"*">>}],
     {ok, Req4} = cowboy_req:reply(200, Headers, D, Req3),
@@ -28,7 +29,7 @@ doit({r, CID1, CID2}) ->
 doit({markets}) ->
     {ok, markets:large_ones()};
 doit({contract, CID}) ->
-    {ok, contracts:read(CID)};
+    {ok, contracts:read(base64:decode(CID))};
 doit({contracts}) ->
     {ok, contracts:large_ones()};
 
