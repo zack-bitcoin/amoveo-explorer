@@ -105,7 +105,7 @@ contracts2(Tx, Txid) ->
                              Source/binary,
                              Types:16,
                              ST:16>>),
-            contracts:add(ID, Source, Types, [], [Txid]);
+            contracts:add(ID, Source, Types, [], [Txid], ST);
         _ -> ok
     end.
             
@@ -131,7 +131,8 @@ markets2(Tx, Height, Txid) ->
             %Amount1 = element(9, Tx),
             %Amount2 = element(10, Tx),
             MID = make_market_id(CID1, Type1, CID2, Type2),
-            contracts:add(CID1, 0, 0, [MID], [Txid]),
+            contracts:add(CID1, 0, 0, [MID], [Txid], 0),
+            contracts:add(CID2, 0, 0, [MID], [Txid], 0),
             markets:add(MID, 0, [Txid], Height, CID1, Type1, CID2, Type2);
         market_swap_tx ->
 %-record(market_swap_tx, {from, nonce, fee, mid, give, take, direction, cid1, type1, cid2, type2}).

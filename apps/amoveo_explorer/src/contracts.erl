@@ -1,11 +1,11 @@
 -module(contracts).
 -behaviour(gen_server).
 -export([start_link/0,code_change/3,handle_call/3,handle_cast/2,handle_info/2,init/1,terminate/2,
-        read/1, add/5, test/0,
+        read/1, add/6, test/0,
          large_ones/0,
         source/1, types/1]).
 
--record(contract, {cid, source = <<0:256>>, types, markets = [], txs = []}).
+-record(contract, {cid, source = <<0:256>>, types, markets = [], txs = [], source_type = 0}).
 source(X) ->
     X#contract.source.
 types(X) ->
@@ -18,7 +18,7 @@ start_link() -> gen_server:start_link({local, ?MODULE}, ?MODULE, ok, []).
 code_change(_OldVsn, State, _Extra) -> {ok, State}.
 terminate(_, _) -> io:format("died!"), ok.
 handle_info(_, X) -> {noreply, X}.
-handle_cast({add, CID, Source, Types, Markets, Txs}, X) -> 
+handle_cast({add, CID, Source, Types, Markets, Txs, SourceType}, X) -> 
     DF = dict:find(CID, X),
     if
         {DF, Types} == {error, 0} ->
@@ -29,7 +29,8 @@ handle_cast({add, CID, Source, Types, Markets, Txs}, X) ->
                         #contract{
                       source = Source,
                       cid = CID,
-                      types = Types};
+                      types = Types,
+                      source_type = SourceType};
                     {ok, Z} -> Z
                 end,
             C2 = C#contract{
@@ -125,8 +126,8 @@ is_in(H, [H|_]) -> true;
 is_in(H, [_|T]) -> 
     is_in(H, T).
 
-add(CID, Source, Types, Markets, Txs) ->
-    gen_server:cast(?MODULE, {add, CID, Source, Types, Markets, Txs}).
+add(CID, Source, Types, Markets, Txs, SourceType) ->
+    gen_server:cast(?MODULE, {add, CID, Source, Types, Markets, Txs, SourceType}).
 read(CID) ->
     %io:fwrite("about to call gen server\n"),
     Y = gen_server:call(?MODULE, {read, CID}),
@@ -141,7 +142,7 @@ test() ->
     CID = hash:doit(1),
     Types = 2,
     Markets = [hash:doit(2), hash:doit(3)],
-    add(CID, <<0:256>>, Types, Markets, []),
+    add(CID, <<0:256>>, Types, Markets, [], 0),
     {ok, #contract{
        cid = CID, 
        types = Types,
