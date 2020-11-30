@@ -75,10 +75,10 @@ load_txs([Block]) ->
     ok.
 load_txs2([], _, _) -> ok;
 load_txs2([Tx|T], Hash, Height) -> 
-    %Txid = txs:add(Tx, Hash),
-    Txid = crypto:hash(sha256, sign:serialize(Tx)),
-    %accounts_txids(Tx, Txid),
-    %accounts_subs(Tx),
+    Txid = txs:add(Tx, Hash),
+    %Txid = crypto:hash(sha256, sign:serialize(Tx)),
+    accounts_txids(Tx, Txid),
+    accounts_subs(Tx),
     contracts(Tx, Txid),
     markets(Tx, Height, Txid),
     load_txs2(T, Hash, Height).

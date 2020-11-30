@@ -45,6 +45,7 @@ handle_cast({add, CID, Source, Types, Markets, Txs}, X) ->
     end;
 handle_cast(_, X) -> {noreply, X}.
 handle_call({read, CID}, _From, X) -> 
+    %io:fwrite("in genserver\n"),
     {reply, dict:find(CID, X), X};
 handle_call(_, _From, X) -> {reply, X, X}.
 
@@ -127,7 +128,14 @@ is_in(H, [_|T]) ->
 add(CID, Source, Types, Markets, Txs) ->
     gen_server:cast(?MODULE, {add, CID, Source, Types, Markets, Txs}).
 read(CID) ->
-    gen_server:call(?MODULE, {read, CID}).
+    %io:fwrite("about to call gen server\n"),
+    Y = gen_server:call(?MODULE, {read, CID}),
+    %io:fwrite("returned from gen server\n"),
+    case Y of
+        error -> 0;
+        X -> X
+    end.
+            
 
 test() ->
     CID = hash:doit(1),

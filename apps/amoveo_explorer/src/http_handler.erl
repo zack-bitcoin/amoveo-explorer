@@ -29,7 +29,12 @@ doit({r, CID1, CID2}) ->
 doit({markets}) ->
     {ok, markets:large_ones()};
 doit({contract, CID}) ->
-    {ok, contracts:read(base64:decode(CID))};
+    %io:fwrite("received api contract request"),
+    %io:fwrite("\n"),
+    X = contracts:read(CID),
+    %io:fwrite(packer:pack(X)),
+    %io:fwrite("\nsending response from gen server\n"),
+    {ok, X};
 doit({contracts}) ->
     {ok, contracts:large_ones()};
 
