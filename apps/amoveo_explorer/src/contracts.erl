@@ -75,8 +75,9 @@ large_ones() ->
     Ls = lists:map(
            fun({CID, C}) ->
                    Source = element(9, C),
-                   MID1 = markets:make_id(Source, 0, CID, 1),
-                   MID2 = markets:make_id(Source, 0, CID, 2),
+                   SourceType = element(10, C),
+                   MID1 = markets:make_id(Source, SourceType, CID, 1),
+                   MID2 = markets:make_id(Source, SourceType, CID, 2),
                    MID3 = markets:make_id(CID, 1, CID, 2),
                    [K1, K2, K3] = 
                        lists:map(fun(MID) ->

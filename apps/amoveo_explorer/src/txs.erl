@@ -14,8 +14,8 @@ terminate(_, _) -> io:format("died!"), ok.
 handle_info(_, X) -> {noreply, X}.
 handle_cast({add, Tx, ID, Block}, X) -> 
     T = #tx{txid = ID, raw = Tx, block = Block},
-    %X2 = dict:store(ID, T, X),
-    {noreply, X};
+    X2 = dict:store(ID, T, X),
+    {noreply, X2};
 handle_cast(_, X) -> {noreply, X}.
 handle_call({read, ID}, _From, X) -> 
     Z = dict:find(ID, X),
