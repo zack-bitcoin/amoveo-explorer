@@ -36,7 +36,9 @@ doit({contract, CID}) ->
     %io:fwrite("\nsending response from gen server\n"),
     {ok, X};
 doit({contracts}) ->
-    {ok, contracts:large_ones()};
+    {ok, contracts:large_ones(10)};
+doit({contracts, Many}) ->
+    {ok, contracts:large_ones(Many)};
 
 doit(X) ->
     io:fwrite("http handler doit fail"),
