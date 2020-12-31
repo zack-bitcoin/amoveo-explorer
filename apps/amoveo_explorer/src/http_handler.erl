@@ -20,7 +20,7 @@ handle(Req, State) ->
 doit({test}) -> {ok, "success"};
 doit({account, Pub}) ->
     {ok, accounts:read(Pub)};
-doit({tx, ID}) ->
+doit({txs, ID}) ->
     {ok, txs:read(ID)};
 doit({market, MID}) ->
     {ok, markets:read(MID)};
