@@ -11,7 +11,7 @@ cron(N) ->
                               Height > N -> 
                                   spawn(fun() ->
                                                 timer:sleep(5000),
-                                                scan_history(Height-5, Height+1)
+                                                scan_history(Height, Height+1)
                                         end),
                                   cron(Height);
                               true -> cron(N)
@@ -53,6 +53,7 @@ scan_history(Start, End) ->
             LastBlock = lists:nth(length(Blocks), Blocks),
             LastHeight = element(2, LastBlock),
             scan_history(LastHeight + 1, End)
+            %scan_history(LastHeight, End)
     end.
 load_txs([]) -> ok;
 load_txs([Block|[NB|T]]) -> 
@@ -61,6 +62,8 @@ load_txs([Block|[NB|T]]) ->
     %io:fwrite("\n"),
     Hash = element(3, NB),
     Height = element(2, NB),
+    %io:fwrite(integer_to_list(Height)),
+    %io:fwrite("\n"),
     %{ok, Hash} = utils:talk({block_hash, Height}),
     Txs = element(11, Block),
     load_txs2(Txs, Hash, Height),
@@ -130,28 +133,35 @@ markets2(Tx, Height, Txid) ->
             CID2 = element(6, Tx),
             Type1 = element(7, Tx),
             Type2 = element(8, Tx),
-            %Amount1 = element(9, Tx),
-            %Amount2 = element(10, Tx),
+            Amount1 = element(9, Tx),
+            Amount2 = element(10, Tx),
             MID = make_market_id(CID1, Type1, CID2, Type2),
             contracts:add(CID1, 0, 0, [MID], [Txid], 0),
             contracts:add(CID2, 0, 0, [MID], [Txid], 0),
-            markets:add(MID, 0, [Txid], Height, CID1, Type1, CID2, Type2);
+            markets:add(
+              MID, Txid, Height, CID1, 
+              Type1, CID2, Type2, Amount1, 
+              Amount2);
         market_swap_tx ->
 %-record(market_swap_tx, {from, nonce, fee, mid, give, take, direction, cid1, type1, cid2, type2}).
             MID = element(5, Tx),
             Give = element(6, Tx),
+            Take = element(7, Tx),
             Direction = element(8, Tx),
             V = case Direction of
                     1 -> %buying type 2.
                         Give;
                     2 -> 0
                 end,
-            markets:add(MID, V, [Txid], Height, 0,0,0,0);
+            markets:swap(MID, Txid, Height, Give, Take, Direction);
+        %markets:add(MID, V, [Txid], Height, 0,0,0,0);
         market_liquidity_tx ->
 %-record(market_liquidity_tx, {from, nonce, fee, mid, amount, cid1, type1, cid2, type2}).
             MID = element(5, Tx),
+            Amount = element(6, Tx),
             %To = element(2, Tx),
-            markets:add(MID, 0, [Txid], Height, 0,0,0,0);
+            markets:liquidity(MID, Height, Txid, Amount);
+            %markets:add(MID, 0, [Txid], Height, 0,0,0,0);
         _ -> ok
     end.
 accounts_subs({signed, Tx, _, _}) ->

@@ -1,12 +1,12 @@
 -module(markets).
 -behaviour(gen_server).
 -export([start_link/0,code_change/3,handle_call/3,handle_cast/2,handle_info/2,init/1,terminate/2,
-        read/1, add/8, large_ones/0, test/0,
-         make_id/4,
+        read/1, add/9, large_ones/0, test/0,
+         make_id/4, swap/6, liquidity/4,
         cid1/1, cid2/1]).
 -define(LOC, "markets.db").
 
--record(market, {mid, height, volume = 0, txs = [], cid1, type1, cid2, type2, amount1, amount2}).
+-record(market, {mid, height, txs = [], cid1, type1, cid2, type2, amount1, amount2, prices = [], liquidities = []}).
 
 make_id(CID1, Type1, CID2, Type2) ->
     %this is a copy of markets:make_id from amoveo.
@@ -42,33 +42,59 @@ terminate(_, X) ->
     db:save(?LOC, X),
     io:format("markets died!"), ok.
 handle_info(_, X) -> {noreply, X}.
-handle_cast({add, MID, Volume, Txs, Height, CID1, Type1, CID2, Type2}, X) -> 
-    DF = dict:find(MID, X),
-    if
-        {DF, CID1} == {error, 0} ->
-            {noreply, X};
-        true ->
-            M = case DF of
-                    {ok, Market} -> Market;
-                    error -> 
-                        #market{
-                      mid = MID, height = Height, 
-                      cid1 = CID1, type1 = Type1, 
-                      cid2 = CID2, type2 = Type2}
-                end,
-            V1 = current_volume(M, Height),
-            %OldHeight = M#market.height,
-            %DH = max(0, Height - OldHeight),
-            %V1 = round(M#market.volume * 
-            %               math:pow(129 / 130, DH)),
-            M2 = M#market{
-                   height = Height, 
-                   volume = V1 + Volume,
-                   txs = merge(Txs, M#market.txs)
-                  },
-            X2 = dict:store(MID, M2, X),
-            {noreply, X2}
-    end;
+handle_cast({add, MID, TxID, Height, CID1, 
+             Type1, CID2, Type2, Amount1, 
+             Amount2}, X) -> 
+    M = #market{
+      mid = MID, height = Height, 
+      cid1 = CID1, type1 = Type1, 
+      cid2 = CID2, type2 = Type2,
+      txs = [TxID], amount1 = Amount1,
+      amount2 = Amount2},
+    X2 = dict:store(MID, M, X),
+    {noreply, X2};
+handle_cast({liquidity, MID, Height, TxID, Amount}, X) ->
+    M = dict:fetch(MID, X),
+    #market{amount1 = A1,
+            amount2 = A2} = M,
+    LS1 = max(1, round(math:sqrt(A1*A2))),
+    LS2 = LS1 + Amount,
+    B1 = A1 * LS2 / LS1,
+    B2 = A2 * LS2 / LS1,
+    M2 = M#market{
+           amount1 = B1,
+           amount2 = B2,
+           liquidities = 
+               [{Height, LS2}|
+                M#market.liquidities]
+          },
+    X2 = dict:store(MID, M2, X), 
+    {noreply, X2};
+handle_cast({swap, MID, TxID, Height, 
+             Give, Take, Direction}, X) -> 
+    M = dict:fetch(MID, X),
+    #market{amount1 = B1,
+            amount2 = B2} = M,
+    K = B1*B2,
+    %(Give+B1) * (B2 - Lose) = K
+    %K/(Give+B1)
+    {A1, A2} = 
+        case Direction of
+            1 -> {B1 + Give, 
+                  K/(Give+B1)};
+            2 -> {K/(Give+B2),
+                  B2 + Give}
+        end,
+    M2 = M#market{
+           height = Height, 
+           txs = [TxID|M#market.txs],
+           amount1 = round(A1),
+           amount2 = round(A2),
+           prices = 
+               [{Height, A2/(A1+A2)}|
+                M#market.prices]},
+    X2 = dict:store(MID, M2, X),
+    {noreply, X2};
 handle_cast(_, X) -> {noreply, X}.
 %handle_call({large, Height}, _From, X) -> 
 %    Keys = dict:fetch_keys(X),
@@ -95,12 +121,12 @@ handle_call({read, MID}, _From, X) ->
     {reply, dict:find(MID, X), X};
 handle_call(_, _From, X) -> {reply, X, X}.
 
-current_volume(M, Height) ->
-    OldHeight = M#market.height,
-    DH = max(0, Height - OldHeight),
-    V1 = round(M#market.volume * 
-                   math:pow(129 / 130, DH)),
-    V1.
+%current_volume(M, Height) ->
+%    OldHeight = M#market.height,
+%    DH = max(0, Height - OldHeight),
+%    V1 = round(M#market.volume * 
+%                   math:pow(129 / 130, DH)),
+%    V1.
 
     
 
@@ -115,14 +141,15 @@ large_ones() ->
           fun(Key) ->
                   dict:fetch(Key, X)
           end, Keys),
-    Markets2 = 
-        lists:sort(
-          fun(A, B) -> 
+    Markets2 = Markets,
+%    Markets2 = 
+%        lists:sort(
+%          fun(A, B) -> 
                   % TODO: volume should decrease depending on how long it has been since it was updated.
-                  VA = current_volume(A, Height),
-                  VB = current_volume(B, Height),
-                  VA > VB
-          end, Markets),
+%                  VA = current_volume(A, Height),
+%                  VB = current_volume(B, Height),
+%                  VA > VB
+%          end, Markets),
 %    Markets3 = 
 %        lists:map(
 %          fun(Market) ->
@@ -142,8 +169,24 @@ large_ones() ->
                                                      
 
 
-add(MID, Volume, Txs, Height, CID1, Type1, CID2, Type2) ->
-    gen_server:cast(?MODULE, {add, MID, Volume, Txs, Height, CID1, Type1, CID2, Type2}).
+add(MID, TxID, Height, CID1, 
+    Type1, CID2, Type2, Amount1, 
+    Amount2) ->
+    gen_server:cast(
+      ?MODULE, 
+      {add, MID, TxID, Height, CID1, 
+       Type1, CID2, Type2, Amount1, 
+       Amount2}).
+swap(MID, TxID, Height, Give, 
+     Take, Direction) ->
+    gen_server:cast(
+      ?MODULE,
+      {swap, MID, TxID, Height, Give,
+       Take, Direction}).
+liquidity(MID, Height, TxID, Amount) ->
+    gen_server:cast(
+      ?MODULE,
+      {liquidity, MID, Height, TxID, Amount}).
 
 
 
@@ -163,10 +206,13 @@ is_in(H, [_|T]) ->
 test() ->
     MID = hash:doit(1),
     CID = hash:doit(2),
+    Txid1 = hash:doit(3),
+    Txid2 = hash:doit(4),
+    Txid3 = hash:doit(5),
 
-    add(MID, 100, [], 1, CID, 1, <<0:256>>, 0),
-    add(MID, 100, [], 5, CID, 1, <<0:256>>, 0),
-    add(MID, 100, [], 4, CID, 1, <<0:256>>, 0),
+    add(MID, Txid1, 1, CID, 1, <<0:256>>, 0, 1, 1),
+    add(MID, Txid3, 4, CID, 1, <<0:256>>, 0, 1, 1),
+    add(MID, Txid2, 5, CID, 1, <<0:256>>, 0, 1, 1),
     {ok, Market} = read(MID),
     [MID] = large_ones(),
     success.
