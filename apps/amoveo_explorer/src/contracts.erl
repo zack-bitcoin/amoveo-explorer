@@ -5,18 +5,29 @@
          large_ones/1,
         source/1, types/1]).
 
+-define(LOC, "contracts.db").
+
 -record(contract, {cid, source = <<0:256>>, types, markets = [], txs = [], source_type = 0}).
 source(X) ->
     X#contract.source.
 types(X) ->
     X#contract.types.
-    
    
 
-init(ok) -> {ok, dict:new()}.
+init(ok) ->
+    process_flag(trap_exit, true),
+    X = db:read(?LOC),
+    Y = if
+            (X == "") -> dict:new();
+            true -> X
+        end,
+    {ok, Y}.
 start_link() -> gen_server:start_link({local, ?MODULE}, ?MODULE, ok, []).
 code_change(_OldVsn, State, _Extra) -> {ok, State}.
-terminate(_, _) -> io:format("died!"), ok.
+terminate(_, X) -> 
+    db:save(?LOC, X),
+    io:format("contracts died!"), 
+    ok.
 handle_info(_, X) -> {noreply, X}.
 handle_cast({add, CID, Source, Types, Markets, Txs, SourceType}, X) -> 
     DF = dict:find(CID, X),

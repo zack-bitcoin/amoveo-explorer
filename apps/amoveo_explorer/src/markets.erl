@@ -4,6 +4,7 @@
         read/1, add/8, large_ones/0, test/0,
          make_id/4,
         cid1/1, cid2/1]).
+-define(LOC, "markets.db").
 
 -record(market, {mid, height, volume = 0, txs = [], cid1, type1, cid2, type2, amount1, amount2}).
 
@@ -27,10 +28,19 @@ cid1(M) ->
 cid2(M) ->
     M#market.cid2.
 
-init(ok) -> {ok, dict:new()}.
+init(ok) -> 
+    process_flag(trap_exit, true),
+    X = db:read(?LOC),
+    Y = if
+            (X == "") -> dict:new();
+            true -> X
+        end,
+    {ok, Y}.
 start_link() -> gen_server:start_link({local, ?MODULE}, ?MODULE, ok, []).
 code_change(_OldVsn, State, _Extra) -> {ok, State}.
-terminate(_, _) -> io:format("died!"), ok.
+terminate(_, X) -> 
+    db:save(?LOC, X),
+    io:format("markets died!"), ok.
 handle_info(_, X) -> {noreply, X}.
 handle_cast({add, MID, Volume, Txs, Height, CID1, Type1, CID2, Type2}, X) -> 
     DF = dict:find(MID, X),

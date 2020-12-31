@@ -5,13 +5,23 @@
          clean/0,
          add/4,
          test/0]).
+-define(LOC, "accounts.db").
 
 -record(acc, {pub, txs = [], sub_accs = [], liquidity_shares = []}).
 
-init(ok) -> {ok, dict:new()}.
+init(ok) -> 
+    process_flag(trap_exit, true),
+    X = db:read(?LOC),
+    Y = if
+            (X == "") -> dict:new();
+            true -> X
+        end,
+    {ok, Y}.
 start_link() -> gen_server:start_link({local, ?MODULE}, ?MODULE, ok, []).
 code_change(_OldVsn, State, _Extra) -> {ok, State}.
-terminate(_, _) -> io:format("died!"), ok.
+terminate(_, X) -> 
+    db:save(?LOC, X),
+    io:format("accounts died!"), ok.
 handle_info(_, X) -> {noreply, X}.
 handle_cast({add, Pub, Txids, Subs, Shares}, X) -> 
     Acc = case dict:find(Pub, X) of

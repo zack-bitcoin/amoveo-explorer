@@ -7,10 +7,20 @@
 
 -export([start_link/0,code_change/3,handle_call/3,handle_cast/2,handle_info/2,init/1,terminate/2,
          scan_history/0, add/2, read/1, test/0]).
-init(ok) -> {ok, dict:new()}.
+-define(LOC, "txs.db").
+init(ok) -> 
+    process_flag(trap_exit, true),
+    X = db:read(?LOC),
+    Y = if
+            (X == "") -> dict:new();
+            true -> X
+        end,
+    {ok, Y}.
 start_link() -> gen_server:start_link({local, ?MODULE}, ?MODULE, ok, []).
 code_change(_OldVsn, State, _Extra) -> {ok, State}.
-terminate(_, _) -> io:format("died!"), ok.
+terminate(_, X) -> 
+    db:save(?LOC, X),
+    io:format("txs died!"), ok.
 handle_info(_, X) -> {noreply, X}.
 handle_cast({add, Tx, ID, Block}, X) -> 
     T = #tx{txid = ID, raw = Tx, block = Block},

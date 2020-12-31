@@ -28,8 +28,9 @@ doit() ->
                 true -> 0;
                 false -> 130000
             end,
+    Start2 = max(Start, scan_height:read()),
 %    spawn(fun() ->
-              scan_history(Start, Height+1).
+              scan_history(Start2, Height+1).
 %          end).
     %scan_sub_accounts(),
     %scan_markets().
@@ -63,6 +64,7 @@ load_txs([Block|[NB|T]]) ->
     %{ok, Hash} = utils:talk({block_hash, Height}),
     Txs = element(11, Block),
     load_txs2(Txs, Hash, Height),
+    scan_height:increment(Height),
     load_txs([NB|T]);
 load_txs([Block]) -> 
     Height = element(2, Block),
