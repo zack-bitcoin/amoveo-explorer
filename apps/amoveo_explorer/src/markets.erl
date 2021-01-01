@@ -53,7 +53,8 @@ handle_cast({add, MID, TxID, Height, CID1,
       txs = [TxID], amount1 = Amount1,
       amount2 = Amount2,
       liquidities = [{Height, LS}],
-      prices = [{Height, Amount2/(Amount1+Amount2)}]
+      %prices = [{Height, Amount2/(Amount1+Amount2)}]
+      prices = [{Height, price_calculation(Amount1, Amount2)}]
      },
     X2 = dict:store(MID, M, X),
     {noreply, X2};
@@ -95,7 +96,7 @@ handle_cast({swap, MID, TxID, Height,
            amount1 = round(A1),
            amount2 = round(A2),
            prices = 
-               [{Height, A2/(A1+A2)}|
+               [{Height, price_calculation(A1, A2)}|
                 M#market.prices]},
     X2 = dict:store(MID, M2, X),
     {noreply, X2};
@@ -131,7 +132,7 @@ handle_call(_, _From, X) -> {reply, X, X}.
 %    V1 = round(M#market.volume * 
 %                   math:pow(129 / 130, DH)),
 %    V1.
-
+price_calculation(A1, A2) -> A2/max(A1, 1).
     
 
 read(MID) ->
