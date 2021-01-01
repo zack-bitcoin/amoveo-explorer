@@ -45,12 +45,16 @@ handle_info(_, X) -> {noreply, X}.
 handle_cast({add, MID, TxID, Height, CID1, 
              Type1, CID2, Type2, Amount1, 
              Amount2}, X) -> 
+    LS = max(1, round(math:sqrt(Amount1*Amount2))),
     M = #market{
       mid = MID, height = Height, 
       cid1 = CID1, type1 = Type1, 
       cid2 = CID2, type2 = Type2,
       txs = [TxID], amount1 = Amount1,
-      amount2 = Amount2},
+      amount2 = Amount2,
+      liquidities = [{Height, LS}],
+      prices = [{Height, Amount2/(Amount1+Amount2)}]
+     },
     X2 = dict:store(MID, M, X),
     {noreply, X2};
 handle_cast({liquidity, MID, Height, TxID, Amount}, X) ->
