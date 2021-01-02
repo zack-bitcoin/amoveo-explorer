@@ -10,8 +10,9 @@ start(_StartType, _StartArgs) ->
             true -> 130000
         end,
     spawn(fun() ->
+                  timer:sleep(1000),
                   scan:doit(),
-                  scan:cron(N)
+                  scan:cron()
           end),
     spawn(fun() ->
                   accounts:clean_cron()

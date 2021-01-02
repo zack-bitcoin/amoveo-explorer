@@ -1,6 +1,15 @@
 -module(scan).
--export([doit/0, make_market_id/4, cron/1]).
+-export([doit/0, make_market_id/4, cron/1, cron/0]).
 
+
+cron() ->
+    spawn(fun() ->
+                  timer:sleep(5000),
+                  cron()
+          end),
+    spawn(fun() ->
+                  doit()
+          end).
 
 cron(N) ->
     spawn(fun() ->
@@ -36,19 +45,19 @@ doit() ->
     %scan_markets().
 scan_history(N, M) when N >= M -> ok;
 scan_history(Start, End) -> 
-    io:fwrite("scanning blocks at \n"),
-    io:fwrite(integer_to_list(Start)),
-    io:fwrite(" - "),
-    io:fwrite(integer_to_list(End)),
-    io:fwrite("\n"),
     E2 = min(End, Start+50),
     {ok, Blocks} = utils:talk({blocks, Start, E2}),
     %{ok, Blocks} = utils:talk({blocks, 50, Start}),
     case length(Blocks) of
         1 -> 
-            io:fwrite("done scanning tx history\n"),
+            %io:fwrite("done scanning tx history\n"),
             ok;
         _ ->
+            io:fwrite("scanning blocks at \n"),
+            io:fwrite(integer_to_list(Start)),
+            io:fwrite(" - "),
+            io:fwrite(integer_to_list(End)),
+            io:fwrite("\n"),
             load_txs(Blocks),
             LastBlock = lists:nth(length(Blocks), Blocks),
             LastHeight = element(2, LastBlock),
