@@ -138,12 +138,27 @@ markets2(Tx, Height, Txid) ->
     case element(1, Tx) of
         market_new_tx ->
 %-record(market_new_tx, {from, nonce = 0, fee, cid1, cid2, type1, type2, amount1, amount2}).
-            CID1 = element(5, Tx),
-            CID2 = element(6, Tx),
-            Type1 = element(7, Tx),
-            Type2 = element(8, Tx),
-            Amount1 = element(9, Tx),
-            Amount2 = element(10, Tx),
+            CID10 = element(5, Tx),
+            CID20 = element(6, Tx),
+            Type10 = element(7, Tx),
+            Type20 = element(8, Tx),
+            Amount10 = element(9, Tx),
+            Amount20 = element(10, Tx),
+
+            <<N1:256>> = CID10,
+            <<N2:256>> = CID20,
+            {CID1, Type1, Amount1,
+             CID2, Type2, Amount2} = 
+                if
+                    ((N1+Type10) =< (N2+Type20)) ->
+                        {CID10, Type10, Amount10,
+                         CID20, Type20, Amount20};
+                    true ->
+                        {CID20, Type20, Amount20,
+                         CID10, Type10, Amount10}
+                end,
+            
+
             MID = make_market_id(CID1, Type1, CID2, Type2),
             contracts:add(CID1, 0, 0, [MID], [Txid], 0),
             contracts:add(CID2, 0, 0, [MID], [Txid], 0),
