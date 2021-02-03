@@ -268,6 +268,8 @@ accounts_txids2(Tx, ID) ->
             spend -> [2, 5];
             create_acc_tx -> [2, 5];
             sub_spend_tx -> [2, 5];
+            contract_new_tx -> [2];
+            contract_use_tx -> [2];
             contract_evidence_tx -> [2];
             contract_timeout_tx -> [2];
             contract_winnings_tx -> [2];
