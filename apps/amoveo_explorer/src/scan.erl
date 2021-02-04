@@ -204,8 +204,8 @@ accounts_subs2(Tx) ->
     case element(1, Tx) of
         swap_tx2 ->
             Offer = element(2, element(5, Tx)),
-            CID1 = element(7, Offer),
-            CID2 = element(10, Offer),
+            CID1 = element(5, Offer),
+            CID2 = element(8, Offer),
             Acc2 = element(2, Tx),
             Acc1 = element(2, Offer),
             accounts:add_sub(Acc1, CID2),
