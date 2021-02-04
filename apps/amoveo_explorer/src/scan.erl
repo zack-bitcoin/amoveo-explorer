@@ -202,6 +202,14 @@ accounts_subs(_) -> ok.
 accounts_subs2(Tx) ->
     %accounts:add_sub(Pub, CID)
     case element(1, Tx) of
+        swap_tx2 ->
+            Offer = element(2, element(5, Tx)),
+            CID1 = element(7, Offer),
+            CID2 = element(10, Offer),
+            Acc2 = element(2, Tx),
+            Acc1 = element(2, Offer),
+            accounts:add_sub(Acc1, CID2),
+            accounts:add_sub(Acc2, CID1);
         sub_spend_tx ->
 %-record(sub_spend_tx, {from, nonce, fee, to, amount, contract, type}).
             To = element(5, Tx),
@@ -262,6 +270,9 @@ accounts_txids({signed, Tx, _, _}, Txid) ->
             accounts_txids2(Tx, Txid)
     end.
 
+accounts_txids2(Tx, ID) when (element(1, Tx) == swap_tx2) ->
+    accounts:add_tx(element(2, Tx), ID),
+    accounts:add_tx(element(2, element(2, element(5, Tx))), ID);
 accounts_txids2(Tx, ID) ->
     Ls = 
         case element(1, Tx) of
