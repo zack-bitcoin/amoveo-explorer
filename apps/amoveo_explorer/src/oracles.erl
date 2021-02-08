@@ -196,7 +196,7 @@ add(OID, N, [F|L]) ->
     [F|add(OID, N, L)].
     
 insert_without_repeats(X, []) -> [X];
-insert_without_repeats(X, [X|T]) -> T;
+insert_without_repeats(X, [X|T]) -> [X|T];
 insert_without_repeats(X, [A|T]) -> 
     [A|insert_without_repeats(X, T)].
     
