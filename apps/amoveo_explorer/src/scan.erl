@@ -95,6 +95,7 @@ load_txs2([Tx|T], Hash, Height) ->
     accounts_subs(Tx),
     contracts(Tx, Txid),
     markets(Tx, Height, Txid),
+    oracles(Tx, Height, Txid),
     load_txs2(T, Hash, Height).
 contracts({signed, Tx, _, _}, Txid) ->
     if
@@ -122,7 +123,39 @@ contracts2(Tx, Txid) ->
             contracts:add(ID, Source, Types, [], [Txid], ST);
         _ -> ok
     end.
+oracles({signed, Tx, _, _}, Height, Txid) ->
+    if
+        (element(1, Tx) == multi_tx) ->
+            lists:map(fun(Z) ->
+                              Z2 = setelement(2, Z, element(2, Tx)),
+                              oracles2(Z2, Height, Txid)
+                      end, element(5, Tx));
+        true ->
+            oracles2(Tx, Height, Txid)
+    end;
+oracles(_, _, _) -> ok.
+oracles2(Tx, Height, Txid) ->
+    case element(1, Tx) of
+        oracle_new ->
+        %{from, nonce, fee, question, start, id, difficulty, governance, governance_amount}
+            OID = element(7, Tx),
+            Question = element(5, Tx),
+            oracles:add_oracle(OID, Height, Txid, Question);
+        oracle_close -> 
+%-record(oracle_close, {from, nonce, fee, oracle_id}).
+            OID = element(5, Tx),
+            oracles:oracle_close(OID, Height, Txid);
+        oracle_bet ->
+            %{from, nonce, fee, id, type, amount}
+            OID = element(5, Tx),
+            Stake = element(7, Tx),
+            Type = element(6, Tx),
+            oracles:oracle_bet(OID, Height, Txid, Stake, Type);
+        _ ->
+            ok
+    end.
             
+
 markets({signed, Tx, _, _}, Height, Txid) ->
     if
         (element(1, Tx) == multi_tx) ->
@@ -312,15 +345,15 @@ scan_sub_accounts() ->
                       end
               end, SAs),
     ok.
-scan_markets() ->
-    {ok, Markets} = utils:talk({market, 2}),
-    lists:map(fun(Market) ->
+%scan_markets() ->
+%    {ok, Markets} = utils:talk({market, 2}),
+%    lists:map(fun(Market) ->
                       %markets:add(MID, Volume, Liquidity, Txs, Height)
-                      MID = element(2, Market), 
-                      Liquidity = element(9, Market),
-                      markets:add(MID, 0, 0, [], 0)
-              end, Markets),
-    ok.
+%                      MID = element(2, Market), 
+%                      Liquidity = element(9, Market),
+%                      markets:add(MID, 0, 0, [], 0)
+%              end, Markets),
+%    ok.
 
 make_market_id(CID1, Type1, CID2, Type2) ->
     <<N1:256>> = CID1,

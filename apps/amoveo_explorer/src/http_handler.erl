@@ -39,6 +39,14 @@ doit({contracts}) ->
     {ok, contracts:large_ones(10)};
 doit({contracts, Many}) ->
     {ok, contracts:large_ones(Many)};
+doit({oracles, 2, Hash}) ->
+    {ok, oracles:read_question_hash(Hash)};
+doit({oracles, 3}) ->
+    {ok, oracles:recent()};
+doit({oracles, 4}) ->
+    {ok, oracles:by_stake()};
+doit({oracles, OID}) ->
+    {ok, oracles:read_oid(OID)};
 
 doit(X) ->
     io:fwrite("http handler doit fail"),
