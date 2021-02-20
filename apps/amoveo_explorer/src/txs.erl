@@ -3,10 +3,10 @@
 
 %this module stores any tx we have seen, as long as it was included in a block with enough work done.
 
--record(tx, {txid, block, raw}).
+-record(tx, {txid, block, raw, height}).
 
 -export([start_link/0,code_change/3,handle_call/3,handle_cast/2,handle_info/2,init/1,terminate/2,
-         scan_history/0, add/2, read/1, test/0]).
+         scan_history/0, add/3, read/1, test/0]).
 -define(LOC, "txs.db").
 init(ok) -> 
     process_flag(trap_exit, true),
@@ -22,8 +22,8 @@ terminate(_, X) ->
     db:save(?LOC, X),
     io:format("txs died!"), ok.
 handle_info(_, X) -> {noreply, X}.
-handle_cast({add, Tx, ID, Block}, X) -> 
-    T = #tx{txid = ID, raw = Tx, block = Block},
+handle_cast({add, Tx, ID, Block, Height}, X) -> 
+    T = #tx{txid = ID, raw = Tx, block = Block, height = Height},
     X2 = dict:store(ID, T, X),
     {noreply, X2};
 handle_cast(_, X) -> {noreply, X}.
@@ -33,15 +33,15 @@ handle_call({read, ID}, _From, X) ->
 handle_call(_, _From, X) -> {reply, X, X}.
 
 
-add(Tx, BlockHash) when element(1, Tx) == coinbase ->
+add(Tx, BlockHash, Height) when element(1, Tx) == coinbase ->
     ID = crypto:hash(sha256, sign:serialize(Tx)),
-    gen_server:cast(?MODULE, {add, Tx, ID, BlockHash}),
+    gen_server:cast(?MODULE, {add, Tx, ID, BlockHash, Height}),
     ID;
-add(Stx, BlockHash) ->
+add(Stx, BlockHash, Height) ->
     Tx = element(2, Stx),
     ID = crypto:hash(sha256, sign:serialize(Tx)),
     <<_:256>> = BlockHash,
-    gen_server:cast(?MODULE, {add, Stx, ID, BlockHash}),
+    gen_server:cast(?MODULE, {add, Stx, ID, BlockHash, Height}),
     ID.
 
 read(ID) ->
@@ -77,19 +77,19 @@ load_txs([Block|[NB|T]]) ->
     Hash = element(3, NB),
     %{ok, Hash} = utils:talk({block_hash, Height}),
     Txs = element(11, Block),
-    load_txs2(Txs, Hash),
+    load_txs2(Txs, Hash, Height),
     load_txs(T);
 load_txs([Block]) -> 
     Height = element(2, Block),
     {ok, Hash} = utils:talk({block_hash, Height}),
     Txs = element(11, Block),
-    load_txs2(Txs, Hash),
+    load_txs2(Txs, Hash, Height),
     ok;
 load_txs([]) -> ok.
-load_txs2([], _) -> ok;
-load_txs2([Tx|T], Hash) -> 
-    add(Tx, Hash),
-    load_txs2(T, Hash).
+load_txs2([], _, _) -> ok;
+load_txs2([Tx|T], Hash, Height) -> 
+    add(Tx, Hash, Height),
+    load_txs2(T, Hash, Height).
 test() ->
 %blocks(Start, End) ->
     {ok, Height} = utils:talk({height}),
