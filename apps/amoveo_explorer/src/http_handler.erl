@@ -47,6 +47,8 @@ doit({oracles, 4}) ->
     {ok, oracles:by_stake()};
 doit({oracles, OID}) ->
     {ok, oracles:read_oid(OID)};
+doit({block, Hash}) ->
+    {ok, blocks:read(Hash)};
 
 doit(X) ->
     io:fwrite("http handler doit fail"),

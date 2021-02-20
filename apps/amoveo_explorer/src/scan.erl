@@ -58,12 +58,19 @@ scan_history(Start, End) ->
             io:fwrite(" - "),
             io:fwrite(integer_to_list(End)),
             io:fwrite("\n"),
+            load_blocks(Blocks),
             load_txs(Blocks),
             LastBlock = lists:nth(length(Blocks), Blocks),
             LastHeight = element(2, LastBlock),
             scan_history(LastHeight + 1, End)
             %scan_history(LastHeight, End)
     end.
+load_blocks([]) -> ok;
+load_blocks([Block|T]) -> 
+    %Hash = element(3, NB),
+    blocks:add(Block),
+    load_blocks(T).
+
 load_txs([]) -> ok;
 load_txs([Block|[NB|T]]) -> 
     %io:fwrite("scanning txs at \n"),
