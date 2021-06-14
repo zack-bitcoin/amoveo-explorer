@@ -2,6 +2,7 @@
 -behaviour(gen_server).
 -export([start_link/0,code_change/3,handle_call/3,handle_cast/2,handle_info/2,init/1,terminate/2,
         read/1, add/6, test/0,
+         update/3,
          large_ones/1,
         source/1, types/1]).
 
@@ -29,6 +30,21 @@ terminate(_, X) ->
     io:format("contracts died!"), 
     ok.
 handle_info(_, X) -> {noreply, X}.
+handle_cast({update, CID, Markets, Txs}, X) -> 
+    case dict:find(CID, X) of
+        error -> {noreply, X};
+        {ok, Z} ->
+            #contract{
+          markets = M1,
+          txs = T1
+         } = Z,
+            C2 = Z#contract{
+                   markets = merge(M1, Markets),
+                   txs = merge(T1, Txs)
+                  },
+            X2 = dict:store(CID, C2, X),
+            {noreply, X2}
+        end;
 handle_cast({add, CID, Source, Types, Markets, Txs, SourceType}, X) -> 
     DF = dict:find(CID, X),
     if
@@ -138,6 +154,8 @@ is_in(H, [H|_]) -> true;
 is_in(H, [_|T]) -> 
     is_in(H, T).
 
+update(CID, Markets, Txs) ->
+    gen_server:cast(?MODULE, {update, CID, Markets, Txs}).
 add(CID, Source, Types, Markets, Txs, SourceType) ->
     gen_server:cast(?MODULE, {add, CID, Source, Types, Markets, Txs, SourceType}).
 read(CID) ->

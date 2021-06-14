@@ -117,12 +117,30 @@ contracts({signed, Tx, _, _}, Txid) ->
 contracts(_, _) -> ok.
 contracts2(Tx, Txid) ->
     case element(1, Tx) of
+        contract_evidence_tx ->
+            ID = element(6, Tx),
+            contracts:update(ID, [], [Txid]),
+            ok;
+        contract_timeout_tx2 ->
+            ID = element(5, Tx),
+            contracts:update(ID, [], [Txid]),
+            ok;
+        contract_simplify_tx ->
+            ok;
+        contract_winnings_tx ->
+            ID = element(5, Tx),
+            contracts:update(ID, [], [Txid]),
+            ok;
+        contract_use_tx ->
+            ID = element(5, Tx),
+            contracts:update(ID, [], [Txid]),
+            ok;
         contract_new_tx ->
 %-record(contract_new_tx, {from, contract_hash, fee, many_types, source, source_type}).
             Code = element(3, Tx),
             Types = element(5, Tx),
             Source = element(6, Tx),
-            ST = element(7, Tx),
+            ST = element(7, Tx),%source type
             ID = hash:doit(<<Code/binary,
                              Source/binary,
                              Types:16,
