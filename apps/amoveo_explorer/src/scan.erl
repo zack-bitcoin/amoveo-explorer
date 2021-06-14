@@ -323,6 +323,7 @@ accounts_txids2(Tx, ID) ->
             contract_use_tx -> [2];
             contract_evidence_tx -> [2];
             contract_timeout_tx -> [2];
+            contract_timeout_tx2 -> [2];
             contract_winnings_tx -> [2];
             contract_simplify_tx -> [2];
             oracle_new -> [2];
