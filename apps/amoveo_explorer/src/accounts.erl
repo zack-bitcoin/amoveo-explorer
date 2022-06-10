@@ -4,6 +4,7 @@
          read/1, add_tx/2, add_sub/2, add_shares/2,
          clean/0,
          add/4,
+         clean_cron/0,
          test/0]).
 -define(LOC, "accounts.db").
 

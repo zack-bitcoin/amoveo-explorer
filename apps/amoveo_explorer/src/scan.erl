@@ -32,14 +32,18 @@ cron(N) ->
 
 
 doit() ->
-    {ok, Height} = utils:talk({height}),
-    Start = case utils:test_mode() of
-                true -> 0;
-                false -> 130000
-            end,
-    Start2 = max(Start, scan_height:read()),
+    X = utils:talk({height}),
+    case X of
+        {ok, Height} ->
+            Start = case utils:test_mode() of
+                        true -> 0;
+                        false -> 130000
+                    end,
+            Start2 = max(Start, scan_height:read()),
 %    spawn(fun() ->
-              scan_history(Start2, Height+1).
+            scan_history(Start2, Height+1);
+        _ -> ok
+    end.
 %          end).
     %scan_sub_accounts(),
     %scan_markets().
@@ -73,23 +77,14 @@ load_blocks([Block|T]) ->
 
 load_txs([]) -> ok;
 load_txs([Block|[NB|T]]) -> 
-    %io:fwrite("scanning txs at \n"),
-    %io:fwrite(integer_to_list(Height)),
-    %io:fwrite("\n"),
     Hash = element(3, NB),
     Height = element(2, NB),
-    %io:fwrite(integer_to_list(Height)),
-    %io:fwrite("\n"),
-    %{ok, Hash} = utils:talk({block_hash, Height}),
     Txs = element(11, Block),
     load_txs2(Txs, Hash, Height),
     scan_height:increment(Height),
     load_txs([NB|T]);
 load_txs([Block]) -> 
     Height = element(2, Block),
-    %io:fwrite("scanning txs at \n"),
-    %io:fwrite(integer_to_list(Height)),
-    %io:fwrite("\n"),
     {ok, Hash} = utils:talk({block_hash, Height}),
     Txs = element(11, Block),
     load_txs2(Txs, Hash, Height),
