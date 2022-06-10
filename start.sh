@@ -10,4 +10,4 @@ fi
 # then launch the software
 
 
-./_build/prod/rel/amoveo_explorer/bin/amoveo_explorer start
+./_build/prod/rel/amoveo_explorer/bin/amoveo_explorer daemon

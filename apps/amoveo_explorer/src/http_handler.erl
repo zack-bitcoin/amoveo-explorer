@@ -6,7 +6,7 @@ init(Req0, Opts) ->
     handle(Req0, Opts).	
 terminate(_Reason, _Req, _State) -> ok.
 handle(Req, State) ->
-    {ok, Data0, Req2} = cowboy_req:body(Req),
+    {ok, Data0, Req2} = cowboy_req:read_body(Req),
     {IP, _Req3} = cowboy_req:peer(Req2),
     %io:fwrite("http handler got message: "),
     %io:fwrite(Data0),
@@ -19,7 +19,7 @@ handle(Req, State) ->
 	%     {<<"Access-Control-Allow-Origin">>, <<"*">>}],
     Headers = #{ <<"content-type">> => <<"application/octet-stream">>,
 	       <<"Access-Control-Allow-Origin">> => <<"*">>},
-    {ok, Req4} = cowboy_req:reply(200, Headers, D, Req2),
+    Req4 = cowboy_req:reply(200, Headers, D, Req2),
     {ok, Req4, State}.
 doit({test}) -> {ok, "success"};
 doit({account, Pub}) ->

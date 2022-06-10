@@ -5,7 +5,7 @@
 %httpc:request(post, {"http://127.0.0.1:3011/", [], "application/octet-stream", "echo"}, [], []).
 %curl -i -d '[-6,"test"]' http://localhost:3011
 handle(Req, _) ->
-    {F, _} = cowboy_req:path(Req),
+    F = cowboy_req:path(Req),
     PrivDir0 = "../../../../js",
     PrivDir = list_to_binary(PrivDir0),
     true = case F of
@@ -23,10 +23,12 @@ handle(Req, _) ->
     %File = << PrivDir/binary, <<"/external_web">>/binary, F/binary>>,
     File = << PrivDir/binary, F/binary>>,
     {ok, _Data, _} = cowboy_req:body(Req),
-    Headers = [{<<"content-type">>, <<"text/html">>},
-    {<<"Access-Control-Allow-Origin">>, <<"*">>}],
+    %Headers = [{<<"content-type">>, <<"text/html">>},
+    %{<<"Access-Control-Allow-Origin">>, <<"*">>}],
+    Headers = #{<<"content-type">> => <<"text/html">>,
+                <<"Access-Control-Allow-Origin">> => <<"*">>},
     Text = read_file(File),
-    {ok, Req2} = cowboy_req:reply(200, Headers, Text, Req),
+    Req2 = cowboy_req:reply(200, Headers, Text, Req),
     {ok, Req2, File}.
 read_file(F) ->
     {ok, File } = file:open(F, [read, binary, raw]),
