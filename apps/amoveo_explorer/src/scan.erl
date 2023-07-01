@@ -49,7 +49,7 @@ doit() ->
     %scan_markets().
 scan_history(N, M) when N >= M -> ok;
 scan_history(Start, End) -> 
-    E2 = min(End, Start+50),
+    E2 = min(End, Start+10),
     {ok, Blocks} = utils:talk({blocks, Start, E2}),
     %{ok, Blocks} = utils:talk({blocks, 50, Start}),
     case length(Blocks) of
