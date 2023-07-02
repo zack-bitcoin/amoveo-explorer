@@ -117,4 +117,4 @@ mem_check() ->
     %io:fwrite("mem: "),
     %io:fwrite(integer_to_list(T div 1000000)),
     %io:fwrite("\n"),
-    ok
+    ok.
