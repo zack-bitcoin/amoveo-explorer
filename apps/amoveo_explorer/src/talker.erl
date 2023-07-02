@@ -11,7 +11,15 @@ talk(Msg, {IP, Port}) ->
     talk(Msg, build_string_peer(IP, Port));
 
 talk(Msg, Peer) ->
-    talk_helper(Msg, Peer, ?RETRY, 20000).
+    %io:fwrite("talker talk start "),
+    mem_check(),
+    R = talk_helper(Msg, Peer, ?RETRY, 20000),
+    %io:fwrite("talker talk end "),
+    mem_check(),
+    %io:fwrite("data size "),
+    %io:fwrite(integer_to_list(size(term_to_binary(R)))),
+    %io:fwrite("\n"),
+    R.
 
 talk(Msg, IP, Port) ->
     talk(Msg, build_string_peer(IP, Port)).
@@ -40,13 +48,16 @@ talk_helper(_, _, 0, _) ->
     bad_peer;
     %{error, failed_connect};
 talk_helper(Msg, Peer, N, TimeOut) ->
+    check_print("talk helper sending message "),
+    mem_check(),
     PM = packer:pack(Msg),
-    %check_print("sending message "),
     %check_print(PM),
     %check_print("\n"),
     %timer:sleep(500),
     Msg = packer:unpack(PM),
-    case httpc:request(post, {Peer, [], "application/octet-stream", iolist_to_binary(PM)}, [{timeout, TimeOut}], []) of
+    PM2 = iolist_to_binary(PM),
+    mem_check(),
+    case httpc:request(post, {Peer, [], "application/octet-stream", PM2}, [{timeout, TimeOut}], []) of
         {ok, {{_, 500, _}, _Headers, []}} ->
 	    check_print("server crashed. Will ignore peer. "),
 	    check_print(element(1, Msg)),
@@ -67,14 +78,19 @@ talk_helper(Msg, Peer, N, TimeOut) ->
 	    %check_print("talker response is "),
 	    %check_print(R),
 	    %check_print("\n"),
+            %io:fwrite("got response "),
+            mem_check(),
 	    DoubleOK = packer:pack({ok, ok}),
 	    if
 		R == DoubleOK -> 0;
 		true ->
-		    packer:unpack(R)
+		    Result = packer:unpack(R),
+                    %io:fwrite("unpacked response "),
+                    mem_check(),
+                    Result
 	    end;
         {error, socket_closed_remotely} ->
-            %check_print("talk_helper socket closed remotely. attempting to reconnect \n"),
+            check_print("talk_helper socket closed remotely. attempting to reconnect \n"),
             talk_helper(Msg, Peer, N - 1, TimeOut);
         {error, timeout} ->
             check_print("talk_helper timeout. attempting to reconnect \n"),
@@ -94,3 +110,11 @@ talk_helper(Msg, Peer, N, TimeOut) ->
             check_print(X),
             error
     end.
+
+mem_check() ->
+    E = erlang:memory(),
+    T = element(2, hd(E)),
+    %io:fwrite("mem: "),
+    %io:fwrite(integer_to_list(T div 1000000)),
+    %io:fwrite("\n"),
+    ok

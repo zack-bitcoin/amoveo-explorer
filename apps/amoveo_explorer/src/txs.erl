@@ -22,11 +22,11 @@ terminate(_, X) ->
     db:save(?LOC, X),
     io:format("txs died!"), ok.
 handle_info(_, X) -> {noreply, X}.
-handle_cast({add, Tx, ID, Block, Height}, X) -> 
+handle_cast(_, X) -> {noreply, X}.
+handle_call({add, Tx, ID, Block, Height}, _, X) -> 
     T = #tx{txid = ID, raw = Tx, block = Block, height = Height},
     X2 = dict:store(ID, T, X),
-    {noreply, X2};
-handle_cast(_, X) -> {noreply, X}.
+    {reply, ok, X2};
 handle_call({read, ID}, _From, X) -> 
     Z = dict:find(ID, X),
     {reply, Z, X};
@@ -35,13 +35,13 @@ handle_call(_, _From, X) -> {reply, X, X}.
 
 add(Tx, BlockHash, Height) when element(1, Tx) == coinbase ->
     ID = crypto:hash(sha256, sign:serialize(Tx)),
-    gen_server:cast(?MODULE, {add, Tx, ID, BlockHash, Height}),
+    gen_server:call(?MODULE, {add, Tx, ID, BlockHash, Height}),
     ID;
 add(Stx, BlockHash, Height) ->
     Tx = element(2, Stx),
     ID = crypto:hash(sha256, sign:serialize(Tx)),
     <<_:256>> = BlockHash,
-    gen_server:cast(?MODULE, {add, Stx, ID, BlockHash, Height}),
+    gen_server:call(?MODULE, {add, Stx, ID, BlockHash, Height}),
     ID.
 
 read(ID) ->

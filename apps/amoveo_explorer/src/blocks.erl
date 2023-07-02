@@ -20,15 +20,15 @@ terminate(_, X) ->
     io:fwrite("blocks died!"),
     ok.
 handle_info(_, X) -> {noreply, X}.
-handle_cast({add, Block}, X) -> 
+handle_cast(_, X) -> {noreply, X}.
+handle_call({add, Block}, _, X) -> 
     Hash = element(3, Block),
     Height = element(2, Block),
     Txs = element(11, Block),
     B2 = #block{height = Height, hash=Hash,
                 txs = txid_maker(Txs)},
     X2 = dict:store(Hash, B2, X),
-    {noreply, X2};
-handle_cast(_, X) -> {noreply, X}.
+    {reply, ok, X2};
 handle_call({read, Hash}, _From, X) -> 
     {reply, dict:find(Hash, X), X};
 handle_call(_, _From, X) -> {reply, X, X}.
@@ -42,4 +42,5 @@ txid_maker([H|T]) ->
 read(Hash) ->
     gen_server:call(?MODULE, {read, Hash}).
 add(Block) ->
-    gen_server:cast(?MODULE, {add, Block}).
+    %gen_server:cast(?MODULE, {add, Block}).
+    gen_server:call(?MODULE, {add, Block}).

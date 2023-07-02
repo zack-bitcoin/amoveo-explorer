@@ -49,8 +49,14 @@ doit() ->
     %scan_markets().
 scan_history(N, M) when N >= M -> ok;
 scan_history(Start, End) -> 
-    E2 = min(End, Start+10),
+    erlang:garbage_collect(self()),
+    E2 = min(End, Start+50),
+    mem_check(),
     {ok, Blocks} = utils:talk({blocks, Start, E2}),
+    erlang:garbage_collect(self()),
+    %starting at this moment, we are wasting a lot of memory. it starts at one utils:talk, and continues until the next time we call utils:talk.
+    %io:fwrite("got blocks\n"),
+    mem_check(),
     %{ok, Blocks} = utils:talk({blocks, 50, Start}),
     case length(Blocks) of
         1 -> 
@@ -62,11 +68,15 @@ scan_history(Start, End) ->
             io:fwrite(" - "),
             io:fwrite(integer_to_list(End)),
             io:fwrite("\n"),
+            mem_check(),
             load_blocks(Blocks),
+            mem_check(),
             load_txs(Blocks),
+            mem_check(),
             LastBlock = lists:nth(length(Blocks), Blocks),
             LastHeight = element(2, LastBlock),
             scan_history(LastHeight + 1, End)
+
             %scan_history(LastHeight, End)
     end.
 load_blocks([]) -> ok;
@@ -390,7 +400,14 @@ make_market_id(CID1, Type1, CID2, Type2) ->
             make_market_id(CID2, Type2, CID1, Type1)
     end.
     
-
+mem_check() ->
+    E = erlang:memory(),
+    T = element(2, hd(E)),
+    %io:fwrite("scan mem: "),
+    %io:fwrite(integer_to_list(T div 1000000)),
+    %io:fwrite("\n"),
+    ok.
+    
 
 
 
