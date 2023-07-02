@@ -53,7 +53,7 @@ scan_history(Start, End) ->
     E2 = min(End, Start+50),
     mem_check(),
     {ok, Blocks} = utils:talk({blocks, Start, E2}),
-    erlang:garbage_collect(self()),
+    %erlang:garbage_collect(self()),
     %starting at this moment, we are wasting a lot of memory. it starts at one utils:talk, and continues until the next time we call utils:talk.
     %io:fwrite("got blocks\n"),
     mem_check(),

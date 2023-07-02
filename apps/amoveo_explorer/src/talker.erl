@@ -48,7 +48,7 @@ talk_helper(_, _, 0, _) ->
     bad_peer;
     %{error, failed_connect};
 talk_helper(Msg, Peer, N, TimeOut) ->
-    check_print("talk helper sending message "),
+    %check_print("talk helper sending message "),
     mem_check(),
     PM = packer:pack(Msg),
     %check_print(PM),
@@ -56,7 +56,11 @@ talk_helper(Msg, Peer, N, TimeOut) ->
     %timer:sleep(500),
     Msg = packer:unpack(PM),
     PM2 = iolist_to_binary(PM),
-    mem_check(),
+    %io:fwrite("before sending request\n"),
+    %mem_check(),
+    %erlang:garbage_collect(self()),
+    %io:fwrite("garbaged\n"),
+    %mem_check(),
     case httpc:request(post, {Peer, [], "application/octet-stream", PM2}, [{timeout, TimeOut}], []) of
         {ok, {{_, 500, _}, _Headers, []}} ->
 	    check_print("server crashed. Will ignore peer. "),
@@ -69,21 +73,15 @@ talk_helper(Msg, Peer, N, TimeOut) ->
 	    check_print(packer:pack(Status)),
             talk_helper(Msg, Peer, N - 1, TimeOut);
         {ok, {_, _, R}} ->
-	    %check_print("talker peer is "),
-	    %check_print(Peer),
-	    %check_print("\n"),
-	    %check_print("talker msg is "),
-	    %check_print(packer:pack(Msg)),
-	    %check_print("\n"),
-	    %check_print("talker response is "),
-	    %check_print(R),
-	    %check_print("\n"),
             %io:fwrite("got response "),
             mem_check(),
 	    DoubleOK = packer:pack({ok, ok}),
 	    if
-		R == DoubleOK -> 0;
+		R == DoubleOK -> 
+                    io:fwrite("double ok\n"),
+                    0;
 		true ->
+                    mem_check(),
 		    Result = packer:unpack(R),
                     %io:fwrite("unpacked response "),
                     mem_check(),
@@ -114,7 +112,7 @@ talk_helper(Msg, Peer, N, TimeOut) ->
 mem_check() ->
     E = erlang:memory(),
     T = element(2, hd(E)),
-    io:fwrite("mem: "),
-    io:fwrite(integer_to_list(T div 1000000)),
-    io:fwrite("\n"),
+    %io:fwrite("mem: "),
+    %io:fwrite(integer_to_list(T div 1000000)),
+    %io:fwrite("\n"),
     ok.
