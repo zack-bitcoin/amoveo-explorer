@@ -114,7 +114,7 @@ talk_helper(Msg, Peer, N, TimeOut) ->
 mem_check() ->
     E = erlang:memory(),
     T = element(2, hd(E)),
-    %io:fwrite("mem: "),
-    %io:fwrite(integer_to_list(T div 1000000)),
-    %io:fwrite("\n"),
+    io:fwrite("mem: "),
+    io:fwrite(integer_to_list(T div 1000000)),
+    io:fwrite("\n"),
     ok.
