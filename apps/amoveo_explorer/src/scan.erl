@@ -47,35 +47,48 @@ doit() ->
 %          end).
     %scan_sub_accounts(),
     %scan_markets().
-scan_history(N, M) when N >= M -> ok;
+scan_history(N, M) when N >= (M-1) -> ok;
 scan_history(Start, End) -> 
     erlang:garbage_collect(self()),
     E2 = min(End, Start+50),
+    io:fwrite("scanning blocks at \n"),
+    io:fwrite(integer_to_list(Start)),
+    io:fwrite(" - "),
+    io:fwrite(integer_to_list(E2)),
+    io:fwrite("\n"),
+    %io:fwrite(" blocks length: "),
+    %io:fwrite(integer_to_list(length(Blocks))),
+    %io:fwrite("\n"),
     mem_check(),
     {ok, Blocks} = utils:talk({blocks, Start, E2}),
-    %erlang:garbage_collect(self()),
-    %starting at this moment, we are wasting a lot of memory. it starts at one utils:talk, and continues until the next time we call utils:talk.
-    %io:fwrite("got blocks\n"),
+    true = is_list(Blocks),
+    %io:fwrite("got blocks\nfirst height: "),
+    %io:fwrite(integer_to_list(element(2, hd(Blocks)))),
+    %io:fwrite(" last height: "),
+    %io:fwrite(integer_to_list(element(2, hd(lists:reverse(Blocks))))),
+    FirstHeight = element(2, hd(Blocks)),
+    LastHeight = element(2, hd(lists:reverse(Blocks))),
+    %io:fwrite("\n"),
     mem_check(),
     %{ok, Blocks} = utils:talk({blocks, 50, Start}),
     case length(Blocks) of
-        1 -> 
+        %1 -> 
+        unused ->
             %io:fwrite("done scanning tx history\n"),
             ok;
         _ ->
-            io:fwrite("scanning blocks at \n"),
-            io:fwrite(integer_to_list(Start)),
-            io:fwrite(" - "),
-            io:fwrite(integer_to_list(End)),
-            io:fwrite("\n"),
             mem_check(),
             load_blocks(Blocks),
             mem_check(),
             load_txs(Blocks),
             mem_check(),
-            LastBlock = lists:nth(length(Blocks), Blocks),
-            LastHeight = element(2, LastBlock),
+%            LastBlock = lists:nth(length(Blocks), Blocks),
+%            LastHeight = element(2, LastBlock),
+%            io:fwrite(" new start:"),
+%            io:fwrite(integer_to_list(LastHeight + 1)),
+%            io:fwrite("\n"),
             scan_history(LastHeight + 1, End)
+            %scan_history(E2 + 1, End)
 
             %scan_history(LastHeight, End)
     end.
@@ -401,8 +414,8 @@ make_market_id(CID1, Type1, CID2, Type2) ->
     end.
     
 mem_check() ->
-    E = erlang:memory(),
-    T = element(2, hd(E)),
+    %E = erlang:memory(),
+    %T = element(2, hd(E)),
     %io:fwrite("scan mem: "),
     %io:fwrite(integer_to_list(T div 1000000)),
     %io:fwrite("\n"),

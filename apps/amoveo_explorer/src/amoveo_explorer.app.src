@@ -11,7 +11,8 @@
     inets,
     encrypter,
     jiffy,
-    pink_hash
+    pink_hash,
+    compiler
    ]},
   {env,[]},
   {modules, []},

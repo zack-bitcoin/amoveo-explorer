@@ -59,22 +59,28 @@ handle_cast({add, MID, TxID, Height, CID1,
     X2 = dict:store(MID, M, X),
     {noreply, X2};
 handle_cast({liquidity, MID, Height, TxID, Amount}, X) ->
-    M = dict:fetch(MID, X),
-    #market{amount1 = A1,
-            amount2 = A2} = M,
-    LS1 = max(1, round(math:sqrt(A1*A2))),
-    LS2 = LS1 + Amount,
-    B1 = A1 * LS2 / LS1,
-    B2 = A2 * LS2 / LS1,
-    M2 = M#market{
-           amount1 = B1,
-           amount2 = B2,
-           liquidities = 
-               [{Height, LS2}|
-                M#market.liquidities]
-          },
-    X2 = dict:store(MID, M2, X), 
-    {noreply, X2};
+    case dict:find(MID, X) of
+        error -> 
+            %failed to update a market, because it doesn't exist.
+            {noreply, X};
+        {ok, M} ->
+            %M = dict:fetch(MID, X),
+            #market{amount1 = A1,
+                    amount2 = A2} = M,
+            LS1 = max(1, round(math:sqrt(A1*A2))),
+            LS2 = LS1 + Amount,
+            B1 = A1 * LS2 / LS1,
+            B2 = A2 * LS2 / LS1,
+            M2 = M#market{
+                   amount1 = B1,
+                   amount2 = B2,
+                   liquidities = 
+                       [{Height, LS2}|
+                        M#market.liquidities]
+                  },
+            X2 = dict:store(MID, M2, X), 
+            {noreply, X2}
+    end;
 handle_cast({swap, MID, TxID, Height, 
              Give, Take, Direction}, X) -> 
     M = dict:fetch(MID, X),
