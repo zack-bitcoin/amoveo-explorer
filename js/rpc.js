@@ -3,7 +3,7 @@ var rpc = (function() {
         return "http://".concat(ip).concat(":").
             concat(port.toString()).concat("/"); }
     function default_explorer(cmd, callback) {
-        var u = "http://159.89.87.58:8091/";
+        var u = "http://64.227.21.70:8091/";
         return talk(cmd, u, callback, 10000);
     };
     function main(cmd, callback, ip, port) {
