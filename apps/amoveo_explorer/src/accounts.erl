@@ -5,10 +5,13 @@
          clean/0,
          add/4,
          clean_cron/0,
+
+         is_worker/2, is_boss/2, not_boss/2,
+
          test/0]).
 -define(LOC, "accounts.db").
 
--record(acc, {pub, txs = [], sub_accs = [], liquidity_shares = []}).
+-record(acc, {pub, txs = [], sub_accs = [], liquidity_shares = [], worker_for = [], boss_of = []}).
 
 init(ok) -> 
     process_flag(trap_exit, true),
@@ -38,6 +41,36 @@ handle_cast({add, Pub, Txids, Subs, Shares}, X) ->
     X2 = dict:store(Pub, Acc2, X),
     {noreply, X2};
 handle_cast({replace, X}, _) -> 
+    {noreply, X};
+handle_cast({worker, Pub, ID}, X) -> 
+    Acc = case dict:find(Pub, X) of
+              error -> #acc{pub = Pub};
+              {ok, Y} -> Y
+          end,
+    WF = Acc#acc.worker_for,
+    WF2 = merge([ID], WF),
+    Acc2 = Acc#acc{worker_for = WF2},
+    X2 = dict:store(Pub, Acc2, X),
+    {noreply, X2};
+handle_cast({boss, Pub, ID}, X) -> 
+    Acc = case dict:find(Pub, X) of
+              error -> #acc{pub = Pub};
+              {ok, Y} -> Y
+          end,
+    BO = Acc#acc.boss_of,
+    BO2 = merge([ID], BO),
+    Acc2 = Acc#acc{boss_of = BO2},
+    X2 = dict:store(Pub, Acc2, X),
+    {noreply, X2};
+handle_cast({not_boss, Pub, ID}, X) -> 
+    Acc = case dict:find(Pub, X) of
+              error -> #acc{pub = Pub};
+              {ok, Y} -> Y
+          end,
+    BO = Acc#acc.boss_of,
+    BO2 = remove_from_list(ID, BO),
+    Acc2 = Acc#acc{boss_of = BO2},
+    X2 = dict:store(Pub, Acc2, X),
     {noreply, X};
 handle_cast(_, X) -> {noreply, X}.
 handle_call({read, Pub}, _From, X) -> 
@@ -120,6 +153,11 @@ is_in(H, [H|_]) -> true;
 is_in(H, [_|T]) -> 
     is_in(H, T).
 
+remove_from_list(ID, []) -> [];
+remove_from_list(ID, [ID|R]) -> R;
+remove_from_list(ID, [H|T]) -> 
+    [H|remove_from_list(ID, T)].
+
 read(Pub) ->
     gen_server:call(?MODULE, {read, Pub}).
 add_tx(0, _) -> ok;
@@ -138,6 +176,15 @@ add(0, _, _, _) -> ok;
 add(_, [], [], []) -> ok;
 add(Pub, Txs, Subs, Shares) ->
     gen_server:cast(?MODULE, {add, Pub, Txs, Subs, Shares}).
+   
+is_worker(Pub, ID) -> 
+    io:fwrite("account is_worker\n"),
+    gen_server:cast(?MODULE, {worker, Pub, ID}).
+is_boss(Pub, ID) ->
+    io:fwrite("account is_boss\n"),
+    gen_server:cast(?MODULE, {boss, Pub, ID}).
+not_boss(Pub, ID) ->
+    gen_server:cast(?MODULE, {not_boss, Pub, ID}).
     
    
 

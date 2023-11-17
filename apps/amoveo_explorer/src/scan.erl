@@ -20,6 +20,7 @@ cron(N) ->
                               Height > N -> 
                                   spawn(fun() ->
                                                 timer:sleep(5000),
+                                                io:fwrite("scan history from cron\n"),
                                                 scan_history(Height, Height+1)
                                         end),
                                   cron(Height);
@@ -41,6 +42,7 @@ doit() ->
                     end,
             Start2 = max(Start, scan_height:read()),
 %    spawn(fun() ->
+            io:fwrite("scan history from doit\n"),
             scan_history(Start2, Height+1);
         _ -> ok
     end.
@@ -71,12 +73,16 @@ scan_history(Start, End) ->
     %io:fwrite("\n"),
     mem_check(),
     %{ok, Blocks} = utils:talk({blocks, 50, Start}),
-    case length(Blocks) of
+    
+    if
         %1 -> 
-        unused ->
+     %   unused ->
             %io:fwrite("done scanning tx history\n"),
+     %       ok;
+       LastHeight < Start ->
+            %no more blocks to scan
             ok;
-        _ ->
+        true ->
             mem_check(),
             load_blocks(Blocks),
             mem_check(),
@@ -87,6 +93,7 @@ scan_history(Start, End) ->
 %            io:fwrite(" new start:"),
 %            io:fwrite(integer_to_list(LastHeight + 1)),
 %            io:fwrite("\n"),
+            io:fwrite("scan history from recursion\n"),
             scan_history(LastHeight + 1, End)
             %scan_history(E2 + 1, End)
 
@@ -121,6 +128,7 @@ load_txs2([Tx|T], Hash, Height) ->
     contracts(Tx, Txid),
     markets(Tx, Height, Txid),
     oracles(Tx, Height, Txid),
+    jobs(Tx, Height, Txid),
     load_txs2(T, Hash, Height).
 contracts({signed, Tx, _, _}, Txid) ->
     if
@@ -375,6 +383,60 @@ accounts_txids2(Tx, ID) ->
                       accounts:add_tx(element(N, Tx),
                                       ID)
               end, Ls).
+jobs({signed, Tx, _, _}, Height, Txid) ->
+    if
+        (element(1, Tx) == multi_tx) ->
+            lists:map(fun(Z) ->
+                              Z2 = setelement(2, Z, element(2, Tx)),
+                              jobs2(Z2, Height, Txid)
+                      end, element(5, Tx));
+        true ->
+            jobs2(Tx, Height, Txid)
+    end;
+jobs(_, _, _) -> ok.
+jobs2(Tx, Height, Txid) -> 
+    case element(1, Tx) of
+        job_create_tx ->
+            Worker = element(2, Tx),
+            Boss = element(2, Tx),
+            Salary = element(5, Tx),
+            Balance = element(6, Tx),
+            Value = element(7, Tx),
+            ID = element(8, Tx),
+            %jobs:new(ID, Worker, Boss, Salary, Balance, Value, Height),
+            accounts:is_worker(Worker, ID),
+            accounts:is_boss(Boss, ID),
+            ok;
+        job_adjust_tx ->
+            ID = element(5, Tx),
+            NewValue = element(6, Tx),
+            NewBalance = element(7, Tx),
+            %jobs:adjust(ID, NewBalance, NewValue, Height),
+            ok;
+        job_buy_tx ->
+            ID = element(5, Tx),
+            NewBoss = element(2, Tx),
+            NewBalance = element(6, Tx),
+            Job = jobs:read(ID),
+            OldBoss = jobs:boss(Job),
+            accounts:is_boss(NewBoss, ID),
+            accounts:not_boss(OldBoss, ID),
+            %jobs:buy(ID, NewBoss, NewBalance, Height),
+            ok;
+        job_receive_salary_tx ->
+            ID = element(5, Tx),
+            %jobs:receive_salary(ID, Height),
+            ok;
+        job_team_adjust_tx ->
+            NewSalary = element(6, Tx), 
+            NewPrice = element(7, Tx),
+            NewBalance = element(8, Tx),
+            ID = element(9, Tx),
+            %jobs:team_adjust(ID, NewBalance, NewValue, NewSalary, Height),
+            ok;
+        _ -> ok
+    end.
+    
 
 scan_sub_accounts() ->
     {ok, SAs} = utils:talk({accounts, 2}),
